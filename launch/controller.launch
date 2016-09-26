@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="controller_parameters" default="$(find folding_assembly_controller)/input/config_controller.yaml"/>
+  <arg name="estimator_parameters" default="$(find folding_assembly_controller)/input/config_estimator.yaml"/>
+
+  <rosparam command="load" file="$(arg controller_parameters)"/>
+  <rosparam command="load" file="$(arg estimator_parameters)"/>
+
+</launch>
