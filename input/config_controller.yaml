@@ -6,3 +6,4 @@ folding_controller:
     w: 0.01
   gains:
     kf: 0.01
+  ft_sensor_topic: /optoforce_node/wrench_IRE005

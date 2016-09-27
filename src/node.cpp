@@ -68,6 +68,52 @@ public:
     wd = goal->desired_velocities.angular.z;
     desired_contact_force_ = goal->contact_force;
 
+    // Get debug options
+    if(goal->estimate_type == goal->NO_ESTIMATE)
+    {
+      controller_.disableEstimate();
+    }
+    else
+    {
+      if(goal->estimate_type == goal->DIRECT_COMPUTATION)
+      {
+        controller_.enableDirectEstimate();
+      }
+      else
+      {
+        if(goal->estimate_type == goal->KALMAN_FILTER)
+        {
+          controller_.enableKF();
+        }
+      }
+    }
+
+    if(goal->force_control_type == goal->NO_FORCE_CONTROL)
+    {
+      controller_.disableForceControl();
+    }
+    else
+    {
+      if(goal->force_control_type == goal->CONTROL_ALONG_NORMAL)
+      {
+        controller_.normalForceControl();
+      }
+      else
+      {
+        if(goal->force_control_type == goal->CONTROL_ALONG_TANGENT)
+        {
+          controller_.tangentForceControl();
+        }
+        else
+        {
+          if(goal->force_control_type == goal->CONTROL_ALONG_ROD)
+          {
+            controller_.rodForceControl();
+          }
+        }
+      }
+    }
+
     ROS_INFO("%s received a goal!", action_name_.c_str());
 
     while(!done)
@@ -94,6 +140,7 @@ public:
       feedback_.commanded_velocities = output_twist;
       feedback_.contact_point_estimate = output_contact_point;
       feedback_.angle_estimate = theta;
+      feedback_.elapsed_time = (ros::Time::now() - begin_time).toSec();
       action_server_.publishFeedback(feedback_);
 
       // Output vOut and wOut to Yumi

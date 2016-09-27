@@ -1,8 +1,23 @@
 geometry_msgs/Twist desired_velocities # Uses linear.x and angular.z respectively for desired sliding and rotational velocities
 float64 contact_force
+
+# Debug options
+int32 estimate_type
+int32 force_control_type
+
+# Definitions
+int32 NO_ESTIMATE=1
+int32 DIRECT_COMPUTATION=2
+int32 KALMAN_FILTER=3
+
+int32 NO_FORCE_CONTROL=1
+int32 CONTROL_ALONG_NORMAL=2
+int32 CONTROL_ALONG_TANGENT=3
+int32 CONTROL_ALONG_ROD=4
 ---
 float64 elapsed_time
 ---
 geometry_msgs/Twist commanded_velocities # This is the output to the robot eef
 geometry_msgs/Vector3 contact_point_estimate
 float64 angle_estimate
+float64 elapsed_time

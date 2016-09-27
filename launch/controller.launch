@@ -7,5 +7,5 @@
   <rosparam command="load" file="$(arg controller_parameters)"/>
   <rosparam command="load" file="$(arg estimator_parameters)"/>
 
-  <node name="folding_assembly_node" pkg="folding_assembly_controller" type="folding_assembly_node" />
+  <node name="folding_assembly_node" pkg="folding_assembly_controller" type="folding_assembly_node" output="screen"/>
 </launch>

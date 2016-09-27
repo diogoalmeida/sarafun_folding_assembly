@@ -13,6 +13,9 @@
 #include <vector>
 #include <eigen_conversions/eigen_msg.h>
 
+enum estimation {NO_ESTIMATION, DIRECT_COMPUTATION, KALMAN_FILTER};
+enum force_controller {NO_FORCE_CONTROL, NORMAL_FORCE_CONTROL, TANGENTIAL_FORCE_CONTROL, ROD_FORCE_CONTROL};
+
 /*
 Folding Controller
 
@@ -25,6 +28,14 @@ class foldingController
     void control(const double &vd, const double &wd, const double &contact_force, Eigen::Vector3d &vOut, Eigen::Vector3d &wOut, const double d_t);
     void getEstimates(Eigen::Vector3d &pc, double &thetac);
 
+    // Debug methods
+    void disableEstimate();
+    void enableDirectEstimate();
+    void enableKF();
+    void disableForceControl();
+    void normalForceControl();
+    void tangentForceControl();
+    void rodForceControl();
   protected:
     Eigen::Vector3d surfaceNormal_, surfaceTangent_,
                     p1_, p2_, r1_,
@@ -35,9 +46,9 @@ class foldingController
                     f2_, t1_, t2_;
     double saturationV_, saturationW_, dt_;
     double thetaC_, fRef_, kf_;
-    bool estimate_;
     std::string wrench_topic_name_;
-
+    estimation estimation_type_;
+    force_controller force_control_type_;
     ros::NodeHandle n_;
     ros::Publisher monitorPub_;
     ros::Subscriber wrench_sub_;

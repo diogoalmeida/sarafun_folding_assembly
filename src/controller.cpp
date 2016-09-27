@@ -11,6 +11,9 @@ foldingController::foldingController()
   fRef_ = 0.0;
   thetaC_ = M_PI;
 
+  estimation_type_ = NO_ESTIMATION;
+  force_control_type_ = NO_FORCE_CONTROL;
+
   n_ = ros::NodeHandle("~");
   getParams();
 
@@ -92,12 +95,30 @@ void foldingController::getEstimates(Eigen::Vector3d &pc, double &thetac)
 
 /* Computes the velocity of the end-effector along the surface normal,
    which is a result of a force control component
+
+   The controller is assuming that the tangent direction points in the direction
+   where we will apply forces
 */
 Eigen::Vector3d foldingController::computeForceControl()
 {
   // Requires access to sensor force measurements
   double v_f, force_norm, force_error;
-  Eigen::Vector3d forceDirection = cos(thetaC_)*surfaceTangent_ + sin(thetaC_)*surfaceNormal_; // The robot will apply force in the direction of the rod piece
+  Eigen::Vector3d forceDirection;
+  switch(force_control_type_)
+  {
+    case NO_FORCE_CONTROL:
+      forceDirection = Eigen::Vector3d::Zero();
+      break;
+    case NORMAL_FORCE_CONTROL:
+      forceDirection = surfaceNormal_;
+      break;
+    case TANGENTIAL_FORCE_CONTROL:
+      forceDirection = -surfaceTangent_;
+      break;
+    case ROD_FORCE_CONTROL:
+      forceDirection = -cos(thetaC_)*surfaceTangent_ + sin(thetaC_)*surfaceNormal_; // The robot will apply force in the direction of the rod piece
+      break;
+  }
   // Eigen::Vector3d forceDirection = surfaceNormal_; // The robot will apply force in the direction of the rod piece
 
   force_norm = f2_.norm();
@@ -121,13 +142,17 @@ void foldingController::updateTheta()
 */
 void foldingController::updateContactPoint()
 {
-  if(estimate_)
+  switch(estimation_type_)
   {
-    // contact point estimation here
-  }
-  else
-  {
-    // hardcoded transform here
+    case NO_ESTIMATION:
+      // code for having a pre-determined contact point
+      break;
+    case DIRECT_COMPUTATION:
+      // code for computing the contact point directly from measured force and torque
+      break;
+    case KALMAN_FILTER:
+      // use the kalman filter
+      break;
   }
 }
 
@@ -136,12 +161,6 @@ void foldingController::updateContactPoint()
 */
 bool foldingController::getParams()
 {
-  if(!n_.getParam("/folding_controller/estimate", estimate_))
-  {
-    ROS_WARN("No estimate parameter set! Using default (/folding_controller/estimate)");
-    estimate_ = false;
-  }
-
   if(!n_.getParam("/folding_controller/saturation/v", saturationV_))
   {
     ROS_WARN("No saturation value set for the linear velocity! Using default (/folding_controller/saturation/v)");
@@ -159,6 +178,12 @@ bool foldingController::getParams()
     ROS_WARN("No force control gain set! Will set to zero (/folding_controller/gains/kf)");
     kf_ = 0.0;
   }
+
+  if(!n_.getParam("/folding_controller/ft_sensor_topic", wrench_topic_name_))
+  {
+    ROS_WARN("FT sensor topic name not defined! Will set to default (/folding_controller/ft_sensor_topic)");
+    wrench_topic_name_ = std::string("/ft_sensor");
+  }
 }
 
 /*
@@ -170,6 +195,43 @@ void foldingController::wrenchCallback(const geometry_msgs::WrenchStamped::Const
 
   tf::wrenchMsgToEigen(msg->wrench, wrench_eigen);
 
-  f2_ = wrench_eigen.block(0,0,2,0);
-  t2_ = wrench_eigen.block(3,0,2,0);
+  f2_ = wrench_eigen.block<3,1>(0,0);
+  t2_ = wrench_eigen.block<3,1>(3,0);
+}
+
+//////////  Methods to assist debugging the controller /////////////
+
+void foldingController::disableEstimate()
+{
+  estimation_type_ = NO_ESTIMATION;
+}
+
+void foldingController::enableDirectEstimate()
+{
+  estimation_type_ = DIRECT_COMPUTATION;
+}
+
+void foldingController::enableKF()
+{
+  estimation_type_ = KALMAN_FILTER;
+}
+
+void foldingController::disableForceControl()
+{
+  force_control_type_ = NO_FORCE_CONTROL;
+}
+
+void foldingController::normalForceControl()
+{
+  force_control_type_ = NORMAL_FORCE_CONTROL;
+}
+
+void foldingController::tangentForceControl()
+{
+  force_control_type_ = TANGENTIAL_FORCE_CONTROL;
+}
+
+void foldingController::rodForceControl()
+{
+  force_control_type_ = ROD_FORCE_CONTROL;
 }
