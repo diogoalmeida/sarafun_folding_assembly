@@ -41,3 +41,6 @@ target_link_libraries(folding_assembly_controller ${catkin_LIBRARIES})# ${Eigen_
 
 add_library(contact_point_estimator src/contact_point_estimator.cpp)
 target_link_libraries(contact_point_estimator ${catkin_LIBRARIES})# ${Eigen_LIBRARIES})
+
+add_executable(folding_assembly_node src/node.cpp)
+target_link_libraries(folding_assembly_node ${catkin_LIBRARIES})
