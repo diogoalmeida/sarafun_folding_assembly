@@ -11,6 +11,7 @@ find_package(
   std_msgs
 	actionlib
 	actionlib_msgs
+	kdl_parser
   #Eigen REQUIRED
 )
 

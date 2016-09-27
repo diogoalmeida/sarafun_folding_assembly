@@ -7,12 +7,15 @@ config:
     process:
       rows: 3
       columns: 3
-      data: [0.00005, 0, 0, 0, 0.00005, 0, 0, 0, 0.00005]
+      # data: [0.00005, 0, 0, 0, 0.00005, 0, 0, 0, 0.00005]
+      data: [1, 0, 0, 0, 1, 0, 0, 0, 1]
     measurement:
       rows: 3
       columns: 3
-      data: [0.25, 0, 0, 0.0, 0.25, 0, 0, 0, 0.25]
+      data: [0.01, 0, 0, 0.0, 0.01, 0, 0, 0, 0.01]
   initialCov:
     rows: 3
     columns: 3
-    data: [0.01, 0, 0, 0.0, 0.01, 0, 0, 0, 0.01]
+    data: [1.0, 0, 0, 0.0, 1.0, 0, 0, 0, 1.0]
+  ft_sensor_topic: /optoforce_node/wrench_IRE005
+  z_offset: 0

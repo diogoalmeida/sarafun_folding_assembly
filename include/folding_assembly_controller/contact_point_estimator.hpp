@@ -48,6 +48,7 @@ class KFEstimatorBase : public estimatorInterface
 
     Eigen::Matrix3d R, Q, sigma;
     Eigen::Vector3d nu, mu;
+    double z_offset_;
 };
 
 /*

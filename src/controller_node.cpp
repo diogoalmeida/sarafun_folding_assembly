@@ -2,7 +2,15 @@
 #include <folding_assembly_controller/controller.hpp>
 #include <actionlib/server/simple_action_server.h>
 #include <eigen_conversions/eigen_msg.h>
+#include <eigen_conversions/eigen_kdl.h>
 #include <folding_assembly_controller/FoldingAssemblyAction.h>
+
+#include <kdl/kdl.hpp>
+#include <kdl/frames.hpp>
+#include <kdl_parser/kdl_parser.hpp>
+#include <kdl/chainiksolvervel_wdls.hpp>
+#include <urdf/model.h>
+
 
 class FoldingAction
 {
@@ -15,8 +23,12 @@ protected:
   folding_assembly_controller::FoldingAssemblyResult result_;
 
   foldingController controller_;
+  KDL::ChainIkSolverVel_wdls *ikvel_;
+  KDL::Chain chain_;
+  KDL::Tree tree_;
+  urdf::Model model_;
 
-  double control_frequency_, desired_contact_force_;
+  double control_frequency_, desired_contact_force_, eps_;
 
   /* Load the node parameters */
   bool loadParams()
@@ -26,6 +38,22 @@ protected:
       ROS_ERROR("%s could not retrive control frequency (/folding_node/frequency)!", action_name_.c_str());
       return false;
     }
+
+    if(!nh_.getParam("/folding_node/wdls/epsilon", eps_))
+    {
+      ROS_WARN("%s could not retrive epsilon for damped least squares (/folding_node/wdls/epsilon)! Using default", action_name_.c_str());
+      eps_ = 0.001;
+    }
+
+    if(!model_.initParam(ros::this_node::getName() + "/robot_description")){
+        ROS_ERROR("ERROR getting robot description");
+        return false;
+    }
+
+    kdl_parser::treeFromUrdfModel(model_, tree_);
+    tree_.getChain("base_link", "left_hand_base", chain_);
+    // tree_.getChain("base_link", "right_hand_base", chain_);
+    ikvel_ = new KDL::ChainIkSolverVel_wdls(chain_, eps_);
 
     return true;
   }
@@ -59,6 +87,8 @@ public:
     Eigen::MatrixXd twist_eig(6, 1);
     double vd, wd, theta;
     Eigen::Vector3d contact_point;
+    KDL::JntArray joint_positions, commanded_joint_velocities;
+    KDL::Twist input_twist;
 
     geometry_msgs::Twist output_twist;
     geometry_msgs::Vector3 output_contact_point;
@@ -136,6 +166,7 @@ public:
       controller_.getEstimates(contact_point, theta);
       tf::twistEigenToMsg(twist_eig, output_twist);
       tf::vectorEigenToMsg(contact_point, output_contact_point);
+      tf::twistEigenToKDL (twist_eig, input_twist);
 
       feedback_.commanded_velocities = output_twist;
       feedback_.contact_point_estimate = output_contact_point;
@@ -143,7 +174,11 @@ public:
       feedback_.elapsed_time = (ros::Time::now() - begin_time).toSec();
       action_server_.publishFeedback(feedback_);
 
-      // Output vOut and wOut to Yumi
+      // Convert twist to joint velocities
+      // Need to get joint positions from yumi
+      // joint_position = ...?
+      ikvel_->CartToJnt(joint_positions, input_twist, commanded_joint_velocities);
+      // Output joint velocities to yumi
       rate.sleep();
     }
 

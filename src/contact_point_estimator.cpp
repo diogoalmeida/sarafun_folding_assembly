@@ -15,6 +15,12 @@ bool KFEstimatorBase::initialize(const Eigen::Vector3d mu_init)
     return false;
   }
 
+  if(!privateNh.getParam("/config/z_offset", z_offset_))
+  {
+    ROS_WARN("z offset not defined! Will set to default (/config/z_offset)");
+    z_offset_ = 0;
+  }
+
   if(estimatorName != std::string("KF"))
   {
     ROS_ERROR("The estimator config file does not have configuration values for the"
@@ -58,7 +64,7 @@ bool KFEstimatorBase::initialize(const Eigen::Vector3d mu_init)
     }
     mu = mu_init;
     nu = Eigen::Vector3d::Zero();
-    
+
     ROS_INFO("INITIAL MU:");
     for(int i = 0; i < 3; i ++)
     {
@@ -144,13 +150,15 @@ Eigen::Vector3d KFEstimator1::estimate(const Eigen::Vector3d v1, const Eigen::Ve
   const Eigen::Vector3d force, const Eigen::Vector3d torque,
   const Eigen::Vector3d p1, const Eigen::Vector3d p2, const double dt)
 {
-  Eigen::Vector3d mu_bar, y;
-  Eigen::Matrix3d sigma_bar, S;
+  Eigen::Vector3d mu_bar, y, r3;
+  Eigen::Matrix3d sigma_bar, S, St;
+  Eigen::Vector3d converted_p2;
 
+  converted_p2 << 0, 0, z_offset_;
   predict(mu_bar, sigma_bar, v1, w1, p1, dt);
   skew(S, force);
 
-  y = torque - S*p2;
+  y = torque - S*converted_p2;
 
   nu = y - (-S*mu_bar);
 

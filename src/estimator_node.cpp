@@ -21,6 +21,7 @@ protected:
   ros::Subscriber wrench_sub_;
 
   double estimate_frequency_;
+  double z_offset_; // offset between sensor frame and assembly part
 
   /* Load the node parameters */
   bool loadParams()
@@ -31,9 +32,9 @@ protected:
       return false;
     }
 
-    if(!nh_.getParam("/folding_controller/ft_sensor_topic", wrench_topic_name_))
+    if(!nh_.getParam("/config/ft_sensor_topic", wrench_topic_name_))
     {
-      ROS_WARN("FT sensor topic name not defined! Will set to default (/folding_controller/ft_sensor_topic)");
+      ROS_WARN("FT sensor topic name not defined! Will set to default (/config/ft_sensor_topic)");
       wrench_topic_name_ = std::string("/ft_sensor");
     }
 
@@ -87,6 +88,7 @@ public:
     Eigen::Vector3d contact_point = Eigen::Vector3d::Zero();
 
     geometry_msgs::Vector3 output_contact_point;
+    geometry_msgs::Vector3 output_contact_point_computed;
 
     estimator_.initialize(contact_point);
 
@@ -110,8 +112,13 @@ public:
       contact_point = estimator_.estimate(Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), f2_, t2_, Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), elapsed_time_sec);
       begin_loop_time = ros::Time::now();
 
+      output_contact_point_computed.x = -t2_(1)/f2_(2);
+      output_contact_point_computed.y = 0;
+      output_contact_point_computed.z = 0;
+
       tf::vectorEigenToMsg(contact_point, output_contact_point);
       feedback_.contact_point_estimate = output_contact_point;
+      feedback_.contact_point_computed = output_contact_point_computed;
       feedback_.elapsed_time = (ros::Time::now() - begin_time).toSec();
       action_server_.publishFeedback(feedback_);
 

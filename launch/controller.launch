@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <launch>
+  <arg name="model" default="$(find abb_irb14000_support)/urdf/irb14000.xacro" />
 
   <arg name="controller_parameters" default="$(find folding_assembly_controller)/input/config_controller.yaml"/>
   <arg name="estimator_parameters" default="$(find folding_assembly_controller)/input/config_estimator.yaml"/>
