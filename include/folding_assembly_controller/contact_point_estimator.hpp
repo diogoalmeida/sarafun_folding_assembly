@@ -22,15 +22,15 @@ class estimatorInterface
 };
 
 /*
-  EKF Estimator Base
+  KF Estimator Base
 
-  Implements the estimator interface for the particular case of the extended
+  Implements the estimator interface for the particular case of the
   Kalman filter
 */
-class EKFEstimatorBase : public estimatorInterface
+class KFEstimatorBase : public estimatorInterface
 {
   public:
-    EKFEstimatorBase(){}
+    KFEstimatorBase(){}
     bool initialize(const Eigen::Vector3d mu_init);
     virtual Eigen::Vector3d estimate(){}
     virtual Eigen::Vector3d estimate(const Eigen::Vector3d v1, const Eigen::Vector3d w1,
@@ -51,15 +51,15 @@ class EKFEstimatorBase : public estimatorInterface
 };
 
 /*
-  EKF Estimator 1
+  KF Estimator 1
 
-  Implements the EKF estimator based on the force torque model and using
+  Implements the KF estimator based on the force torque model and using
   one force torque measurement
 */
-class EKFEstimator1 : public EKFEstimatorBase
+class KFEstimator1 : public KFEstimatorBase
 {
   public:
-    EKFEstimator1(){}
+    KFEstimator1(){}
     virtual Eigen::Vector3d estimate(const Eigen::Vector3d v1, const Eigen::Vector3d w1,
       const Eigen::Vector3d force, const Eigen::Vector3d torque,
       const Eigen::Vector3d p1, const Eigen::Vector3d p2, const double dt);

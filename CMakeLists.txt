@@ -23,7 +23,7 @@ add_message_files(
 
 add_action_files(
 	DIRECTORY action
-	FILES FoldingAssembly.action
+	FILES FoldingAssembly.action Estimate.action
 )
 
 generate_messages(
@@ -50,6 +50,10 @@ target_link_libraries(folding_assembly_controller ${catkin_LIBRARIES})# ${Eigen_
 add_library(contact_point_estimator src/contact_point_estimator.cpp)
 target_link_libraries(contact_point_estimator ${catkin_LIBRARIES})# ${Eigen_LIBRARIES})
 
-add_executable(folding_assembly_node src/node.cpp)
+add_executable(folding_assembly_node src/controller_node.cpp)
 target_link_libraries(folding_assembly_node folding_assembly_controller ${catkin_LIBRARIES})
 add_dependencies(folding_assembly_node ${catkin_EXPORTED_TARGETS})
+
+add_executable(estimator_node src/estimator_node.cpp)
+target_link_libraries(estimator_node contact_point_estimator ${catkin_LIBRARIES})
+add_dependencies(estimator_node ${catkin_EXPORTED_TARGETS})

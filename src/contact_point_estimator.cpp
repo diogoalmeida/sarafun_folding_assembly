@@ -1,7 +1,7 @@
 #include <folding_assembly_controller/contact_point_estimator.hpp>
 
 
-bool EKFEstimatorBase::initialize(const Eigen::Vector3d mu_init)
+bool KFEstimatorBase::initialize(const Eigen::Vector3d mu_init)
 {
   std::string estimatorName;
   if(privateNh.hasParam("estimatorName"))
@@ -15,10 +15,10 @@ bool EKFEstimatorBase::initialize(const Eigen::Vector3d mu_init)
     return false;
   }
 
-  if(estimatorName != std::string("EKF"))
+  if(estimatorName != std::string("KF"))
   {
     ROS_ERROR("The estimator config file does not have configuration values for the"
-      "EKF estimator (estimatorName: EKF). Shutting down...");
+      "KF estimator (estimatorName: KF). Shutting down...");
       privateNh.shutdown();
       return false;
   }
@@ -45,13 +45,13 @@ bool EKFEstimatorBase::initialize(const Eigen::Vector3d mu_init)
     else
     {
       ROS_ERROR("No noise matrices information in the config file for the"
-        "EKF estimator (config/noiseMatrices). Shutting down...");
+        "KF estimator (config/noiseMatrices). Shutting down...");
         privateNh.shutdown();
         return false;
     }
     if(!parseMatrixData(sigma, std::string("config/initialCov")))
     {
-      ROS_ERROR("No initial covariance matrix provided for the EKF estimator"
+      ROS_ERROR("No initial covariance matrix provided for the KF estimator"
         "(config/initialCov). Shutting down...");
         privateNh.shutdown();
         return false;
@@ -62,12 +62,10 @@ bool EKFEstimatorBase::initialize(const Eigen::Vector3d mu_init)
     {
       std::cout << mu(i) << " ";
     }
-    std::cout << std::endl;
-    std::cin.get();
   }
   else
   {
-    ROS_ERROR("No config section exists in the EKF estimator config file."
+    ROS_ERROR("No config section exists in the KF estimator config file."
       "Shutting down...");
       privateNh.shutdown();
       return false;
@@ -76,7 +74,7 @@ bool EKFEstimatorBase::initialize(const Eigen::Vector3d mu_init)
   return true;
 }
 
-bool EKFEstimatorBase::parseMatrixData(Eigen::Matrix3d &M, const std::string configName)
+bool KFEstimatorBase::parseMatrixData(Eigen::Matrix3d &M, const std::string configName)
 {
   int rows = 0, columns = 0;
   std::vector<double> vals;
@@ -119,7 +117,7 @@ bool EKFEstimatorBase::parseMatrixData(Eigen::Matrix3d &M, const std::string con
   return true;
 }
 
-void EKFEstimatorBase::initializeEigenMatrix(Eigen::Matrix3d &M, int rows,
+void KFEstimatorBase::initializeEigenMatrix(Eigen::Matrix3d &M, int rows,
   int columns, const std::vector<double> vals)
 {
   for(int i = 0; i < rows; i++)
@@ -131,7 +129,7 @@ void EKFEstimatorBase::initializeEigenMatrix(Eigen::Matrix3d &M, int rows,
   }
 }
 
-void EKFEstimatorBase::skew(Eigen::Matrix3d &S, const Eigen::Vector3d w)
+void KFEstimatorBase::skew(Eigen::Matrix3d &S, const Eigen::Vector3d w)
 {
   S << 0, -w(2), w(1),
        w(2), 0, -w(0),
@@ -140,7 +138,7 @@ void EKFEstimatorBase::skew(Eigen::Matrix3d &S, const Eigen::Vector3d w)
 
 //////////////////////////////////////////////
 
-Eigen::Vector3d EKFEstimator1::estimate(const Eigen::Vector3d v1, const Eigen::Vector3d w1,
+Eigen::Vector3d KFEstimator1::estimate(const Eigen::Vector3d v1, const Eigen::Vector3d w1,
   const Eigen::Vector3d force, const Eigen::Vector3d torque,
   const Eigen::Vector3d p1, const Eigen::Vector3d p2, const double dt)
 {
@@ -159,7 +157,7 @@ Eigen::Vector3d EKFEstimator1::estimate(const Eigen::Vector3d v1, const Eigen::V
   return mu;
 }
 
-void EKFEstimator1::predict(Eigen::Vector3d &mu_bar, Eigen::Matrix3d &sigma_bar,
+void KFEstimator1::predict(Eigen::Vector3d &mu_bar, Eigen::Matrix3d &sigma_bar,
   const Eigen::Vector3d v1, const Eigen::Vector3d w1,
   const Eigen::Vector3d pEef, const double dt)
 {
@@ -174,7 +172,7 @@ void EKFEstimator1::predict(Eigen::Vector3d &mu_bar, Eigen::Matrix3d &sigma_bar,
   sigma_bar.triangularView<Eigen::Upper>() = S*sigma.selfadjointView<Eigen::Upper>()*S.transpose() + R;
 }
 
-void EKFEstimator1::update(const Eigen::Vector3d mu_bar, const Eigen::Matrix3d sigma_bar,
+void KFEstimator1::update(const Eigen::Vector3d mu_bar, const Eigen::Matrix3d sigma_bar,
   const Eigen::Matrix3d H)
 {
   Eigen::Matrix3d Kalman;
