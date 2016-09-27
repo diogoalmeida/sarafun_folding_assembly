@@ -1,6 +1,8 @@
 #include <ros/ros.h>
 #include <folding_assembly_controller/controller.hpp>
 #include <actionlib/server/simple_action_server.h>
+#include <eigen_conversions/eigen_msg.h>
+#include <folding_assembly_controller/FoldingAssemblyAction.h>
 
 class FoldingAction
 {
@@ -21,7 +23,7 @@ protected:
   {
     if(!nh_.getParam("/folding_node/frequency", control_frequency_))
     {
-      ROS_ERROR("%s could not retrive control frequency!", action_name_.c_str());
+      ROS_ERROR("%s could not retrive control frequency (/folding_node/frequency)!", action_name_.c_str());
       return false;
     }
 
@@ -31,7 +33,7 @@ protected:
 public:
 
   FoldingAction(std::string name) :
-    as_(nh_, name, boost::bind(&FoldingAction::executeCB, this, _1), false),
+    action_server_(nh_, name, boost::bind(&FoldingAction::executeCB, this, _1), false),
     action_name_(name)
   {
     if(!loadParams())
@@ -40,7 +42,9 @@ public:
       exit(0);
     }
 
-    as_.start();
+    ROS_INFO("%s is starting the action server...", action_name_.c_str());
+    action_server_.start();
+    ROS_INFO("%s started!", action_name_.c_str());
   }
 
   void executeCB(const folding_assembly_controller::FoldingAssemblyGoalConstPtr &goal)
@@ -51,19 +55,23 @@ public:
     ros::Time begin_loop_time = ros::Time::now();
     ros::Time current_time = ros::Time::now();
     double elapsed_time_sec, total_time_sec;
-    Eigen::Vector3d v_out, w_out, twist_eig;
+    Eigen::Vector3d v_out, w_out;
+    Eigen::MatrixXd twist_eig(6, 1);
     double vd, wd;
     geometry_msgs::Twist output_twist;
 
     vd = goal->desired_velocities.linear.x;
     wd = goal->desired_velocities.angular.z;
 
+    ROS_INFO("%s received a goal!", action_name_.c_str());
+
     while(!done)
     {
       if(action_server_.isPreemptRequested() || !ros::ok())
       {
         ROS_WARN("%s was preempted!", action_name_.c_str());
-        action_server_.setPreempted();
+        result_.elapsed_time = (ros::Time::now() - begin_time).toSec();
+        action_server_.setPreempted(result_);
         success = false;
         break;
       }
@@ -98,7 +106,8 @@ int main(int argc, char ** argv)
 {
   ros::init(argc, argv, "folding_assembly_node");
 
-  FoldingAction(ros::this_node::getName());
+  FoldingAction folding_action(ros::this_node::getName());
+  ROS_INFO("Folding assembly node started with name %s", ros::this_node::getName().c_str());
   ros::spin();
   return 0;
 }

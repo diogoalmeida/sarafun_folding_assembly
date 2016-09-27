@@ -9,6 +9,8 @@ find_package(
   eigen_conversions
   message_generation
   std_msgs
+	actionlib
+	actionlib_msgs
   #Eigen REQUIRED
 )
 
@@ -19,13 +21,19 @@ add_message_files(
   monitorMsg.msg
 )
 
+add_action_files(
+	DIRECTORY action
+	FILES FoldingAssembly.action
+)
+
 generate_messages(
   DEPENDENCIES
+	actionlib_msgs
   geometry_msgs
 )
 
 catkin_package(
-  CATKIN_DEPENDS message_runtime
+  CATKIN_DEPENDS message_runtime actionlib_msgs
   INCLUDE_DIRS include
   LIBRARIES folding_assembly_controller contact_point_estimator
 )
@@ -43,4 +51,5 @@ add_library(contact_point_estimator src/contact_point_estimator.cpp)
 target_link_libraries(contact_point_estimator ${catkin_LIBRARIES})# ${Eigen_LIBRARIES})
 
 add_executable(folding_assembly_node src/node.cpp)
-target_link_libraries(folding_assembly_node ${catkin_LIBRARIES})
+target_link_libraries(folding_assembly_node folding_assembly_controller ${catkin_LIBRARIES})
+add_dependencies(folding_assembly_node ${catkin_EXPORTED_TARGETS})
