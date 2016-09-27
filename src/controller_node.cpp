@@ -17,7 +17,7 @@ class FoldingAction
 protected:
   ros::NodeHandle nh_;
   actionlib::SimpleActionServer<folding_assembly_controller::FoldingAssemblyAction> action_server_;
-  std::string action_name_;
+  std::string action_name_, rod_arm_;
 
   folding_assembly_controller::FoldingAssemblyFeedback feedback_;
   folding_assembly_controller::FoldingAssemblyResult result_;
@@ -45,14 +45,28 @@ protected:
       eps_ = 0.001;
     }
 
+    if(!nh_.getParam("/folding_node/arm", rod_arm_))
+    {
+      ROS_WARN("%s could not retrive the rod arm (/folding_node/arm)! Using default", action_name_.c_str());
+      rod_arm_ = std::string("right");
+    }
+
     if(!model_.initParam(ros::this_node::getName() + "/robot_description")){
         ROS_ERROR("ERROR getting robot description");
         return false;
     }
 
     kdl_parser::treeFromUrdfModel(model_, tree_);
-    tree_.getChain("base_link", "left_hand_base", chain_);
-    // tree_.getChain("base_link", "right_hand_base", chain_);
+
+    if (rod_arm_ == "left")
+    {
+      tree_.getChain("base_link", "left_hand_base", chain_);
+    }
+    else
+    {
+      tree_.getChain("base_link", "right_hand_base", chain_);
+    }
+
     ikvel_ = new KDL::ChainIkSolverVel_wdls(chain_, eps_);
 
     return true;
