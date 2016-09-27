@@ -57,6 +57,8 @@ bool KFEstimatorBase::initialize(const Eigen::Vector3d mu_init)
         return false;
     }
     mu = mu_init;
+    nu = Eigen::Vector3d::Zero();
+    
     ROS_INFO("INITIAL MU:");
     for(int i = 0; i < 3; i ++)
     {

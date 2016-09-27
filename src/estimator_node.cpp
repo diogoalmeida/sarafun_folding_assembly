@@ -100,6 +100,8 @@ public:
         result_.elapsed_time = (ros::Time::now() - begin_time).toSec();
         action_server_.setPreempted(result_);
         success = false;
+        f2_ = Eigen::Vector3d::Zero();
+        t2_ = Eigen::Vector3d::Zero();
         break;
       }
 
