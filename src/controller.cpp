@@ -152,7 +152,7 @@ void foldingController::updateContactPoint()
       // code for computing the contact point directly from measured force and torque
       break;
     case KALMAN_FILTER:
-      pc_ = estimator_.estimate(v1_, w1_, f2_, t2_, p1_, p2_, dt_);
+      pc_ = estimator_.estimate(measured_v1_, measured_w1_, f2_, t2_, p1_, p2_, dt_);
       break;
   }
 }
@@ -198,6 +198,16 @@ void foldingController::wrenchCallback(const geometry_msgs::WrenchStamped::Const
 
   f2_ = wrench_eigen.block<3,1>(0,0);
   t2_ = wrench_eigen.block<3,1>(3,0);
+}
+
+/*
+  Gets the current end-effector position and velocities computed from KDL
+*/
+void foldingController::updateState(const Eigen::Vector3d p1_eig, const Eigen::MatrixXd measured_twist_eig)
+{
+  p1_ = p1_eig;
+  measured_v1_ = measured_twist_eig.block<3,1>(0,0);
+  measured_w1_ = measured_twist_eig.block<3,1>(3,0);
 }
 
 //////////  Methods to assist debugging the controller /////////////

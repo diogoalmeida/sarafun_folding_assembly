@@ -9,6 +9,8 @@
 #include <kdl/frames.hpp>
 #include <kdl_parser/kdl_parser.hpp>
 #include <kdl/chainiksolvervel_wdls.hpp>
+#include <kdl/chainfksolvervel_recursive.hpp>
+#include <kdl/chainfksolverpos_recursive.hpp>
 #include <urdf/model.h>
 
 
@@ -24,6 +26,8 @@ protected:
 
   foldingController controller_;
   KDL::ChainIkSolverVel_wdls *ikvel_;
+  KDL::ChainFkSolverVel_recursive *fkvel_;
+  KDL::ChainFkSolverPos_recursive *fkpos_;
   KDL::Chain chain_;
   KDL::Tree tree_;
   urdf::Model model_;
@@ -68,6 +72,8 @@ protected:
     }
 
     ikvel_ = new KDL::ChainIkSolverVel_wdls(chain_, eps_);
+    fkvel_ = new KDL::ChainFkSolverVel_recursive(chain_);
+    fkpos_ = new KDL::ChainFkSolverPos_recursive(chain_);
 
     return true;
   }
@@ -99,10 +105,14 @@ public:
     double elapsed_time_sec, total_time_sec;
     Eigen::Vector3d v_out, w_out;
     Eigen::MatrixXd twist_eig(6, 1);
+    Eigen::Matrix<double, 6, 1>  measured_twist_eig;
     double vd, wd, theta;
-    Eigen::Vector3d contact_point;
+    Eigen::Vector3d contact_point, p1_eig;
     KDL::JntArray joint_positions, commanded_joint_velocities;
+    KDL::JntArrayVel joint_velocities;
     KDL::Twist input_twist;
+    KDL::FrameVel v1;
+    KDL::Frame p1;
 
     geometry_msgs::Twist output_twist;
     geometry_msgs::Vector3 output_contact_point;
@@ -171,6 +181,15 @@ public:
         break;
       }
 
+      // get position of the end-effector
+      fkpos_->JntToCart(joint_positions, p1);
+      tf::vectorKDLToEigen(p1.p, p1_eig);
+
+      // get velocity of the end-effector
+      fkvel_->JntToCart(joint_velocities, v1);
+      tf::twistKDLToEigen(v1.deriv(), measured_twist_eig);
+
+      controller_.updateState(p1_eig, measured_twist_eig);
       current_time = ros::Time::now();
       elapsed_time_sec = (current_time - begin_loop_time).toSec();
       controller_.control(vd, wd, desired_contact_force_, v_out, w_out, elapsed_time_sec);

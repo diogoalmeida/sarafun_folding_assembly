@@ -27,6 +27,7 @@ class foldingController
     foldingController();
     void control(const double &vd, const double &wd, const double &contact_force, Eigen::Vector3d &vOut, Eigen::Vector3d &wOut, const double d_t);
     void getEstimates(Eigen::Vector3d &pc, double &thetac);
+    void updateState(Eigen::Vector3d p1_eig, Eigen::MatrixXd measured_twist_eig);
 
     // Debug methods
     void disableEstimate();
@@ -43,14 +44,15 @@ class foldingController
                     pd_, thetaD_, v1_,
                     w1_, vref_, wref_,
                     vf_, realPc_, f1_,
-                    f2_, t1_, t2_;
+                    f2_, t1_, t2_,
+                    measured_v1_, measured_w1_;
     double saturationV_, saturationW_, dt_;
     double thetaC_, fRef_, kf_;
     std::string wrench_topic_name_;
     estimation estimation_type_;
     force_controller force_control_type_;
     KFEstimator1 estimator_;
-    
+
     ros::NodeHandle n_;
     ros::Publisher monitorPub_;
     ros::Subscriber wrench_sub_;
