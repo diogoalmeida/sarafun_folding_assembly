@@ -16,7 +16,7 @@ protected:
 
   foldingController controller_;
 
-  double control_frequency_;
+  double control_frequency_, desired_contact_force_;
 
   /* Load the node parameters */
   bool loadParams()
@@ -57,11 +57,16 @@ public:
     double elapsed_time_sec, total_time_sec;
     Eigen::Vector3d v_out, w_out;
     Eigen::MatrixXd twist_eig(6, 1);
-    double vd, wd;
-    geometry_msgs::Twist output_twist;
+    double vd, wd, theta;
+    Eigen::Vector3d contact_point;
 
+    geometry_msgs::Twist output_twist;
+    geometry_msgs::Vector3 output_contact_point;
+
+    // Get desired linear and angular velocity
     vd = goal->desired_velocities.linear.x;
     wd = goal->desired_velocities.angular.z;
+    desired_contact_force_ = goal->contact_force;
 
     ROS_INFO("%s received a goal!", action_name_.c_str());
 
@@ -76,16 +81,19 @@ public:
         break;
       }
 
-      // Get desired linear and angular velocity
       current_time = ros::Time::now();
       elapsed_time_sec = (current_time - begin_loop_time).toSec();
-      controller_.control(vd, wd, v_out, w_out, elapsed_time_sec);
+      controller_.control(vd, wd, desired_contact_force_, v_out, w_out, elapsed_time_sec);
       begin_loop_time = ros::Time::now();
 
       twist_eig << v_out, w_out;
+      controller_.getEstimates(contact_point, theta);
       tf::twistEigenToMsg(twist_eig, output_twist);
+      tf::vectorEigenToMsg(contact_point, output_contact_point);
 
       feedback_.commanded_velocities = output_twist;
+      feedback_.contact_point_estimate = output_contact_point;
+      feedback_.angle_estimate = theta;
       action_server_.publishFeedback(feedback_);
 
       // Output vOut and wOut to Yumi

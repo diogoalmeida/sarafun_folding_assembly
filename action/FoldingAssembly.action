@@ -1,5 +1,8 @@
 geometry_msgs/Twist desired_velocities # Uses linear.x and angular.z respectively for desired sliding and rotational velocities
+float64 contact_force
 ---
-float64 elapsed_time 
+float64 elapsed_time
 ---
 geometry_msgs/Twist commanded_velocities # This is the output to the robot eef
+geometry_msgs/Vector3 contact_point_estimate
+float64 angle_estimate

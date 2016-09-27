@@ -1,9 +1,8 @@
 # Configuration file for the folding assembly controller
-# Should include desired set points and gains
-
-saturationValues:
-  linearVelocity: 0.1
-  angularVelocity: 0.2
-noEstimate:
-  kp: 0.0005
-  ki: 0.000025
+folding_controller:
+  estimate: false
+  saturation:
+    v: 0.01
+    w: 0.01
+  gains:
+    kf: 0.01
