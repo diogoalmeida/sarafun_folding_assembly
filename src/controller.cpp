@@ -13,6 +13,7 @@ foldingController::foldingController()
 
   estimation_type_ = NO_ESTIMATION;
   force_control_type_ = NO_FORCE_CONTROL;
+  estimator_.initialize(p1_);
 
   n_ = ros::NodeHandle("~");
   getParams();
@@ -151,7 +152,7 @@ void foldingController::updateContactPoint()
       // code for computing the contact point directly from measured force and torque
       break;
     case KALMAN_FILTER:
-      // use the kalman filter
+      // estimator_.estimate(need_robot_velocity, need_robot_velocity, f2_, t2_, need_robot_position, need_ft_sensor_position, dt);
       break;
   }
 }

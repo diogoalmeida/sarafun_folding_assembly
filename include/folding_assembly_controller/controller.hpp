@@ -3,7 +3,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Vector3.h>
 #include <geometry_msgs/WrenchStamped.h>
-// #include <folding_assembly_controller/contact_point_estimator.hpp>
+#include <folding_assembly_controller/contact_point_estimator.hpp>
 // #include <tf/transform_listener.h>
 #include <Eigen/Dense>
 #include <math.h>
@@ -49,6 +49,8 @@ class foldingController
     std::string wrench_topic_name_;
     estimation estimation_type_;
     force_controller force_control_type_;
+    KFEstimator1 estimator_;
+    
     ros::NodeHandle n_;
     ros::Publisher monitorPub_;
     ros::Subscriber wrench_sub_;
