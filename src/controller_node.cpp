@@ -51,7 +51,7 @@ protected:
       rod_arm_ = std::string("right");
     }
 
-    if(!model_.initParam(ros::this_node::getName() + "/robot_description")){
+    if(!model_.initParam("/robot_description")){
         ROS_ERROR("ERROR getting robot description");
         return false;
     }

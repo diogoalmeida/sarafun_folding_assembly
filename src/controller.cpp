@@ -152,7 +152,7 @@ void foldingController::updateContactPoint()
       // code for computing the contact point directly from measured force and torque
       break;
     case KALMAN_FILTER:
-      // estimator_.estimate(need_robot_velocity, need_robot_velocity, f2_, t2_, need_robot_position, need_ft_sensor_position, dt);
+      pc_ = estimator_.estimate(v1_, w1_, f2_, t2_, p1_, p2_, dt_);
       break;
   }
 }
@@ -180,9 +180,9 @@ bool foldingController::getParams()
     kf_ = 0.0;
   }
 
-  if(!n_.getParam("/folding_controller/ft_sensor_topic", wrench_topic_name_))
+  if(!n_.getParam("/config/ft_sensor_topic", wrench_topic_name_))
   {
-    ROS_WARN("FT sensor topic name not defined! Will set to default (/folding_controller/ft_sensor_topic)");
+    ROS_WARN("FT sensor topic name not defined! Will set to default (/config/ft_sensor_topic)");
     wrench_topic_name_ = std::string("/ft_sensor");
   }
 }

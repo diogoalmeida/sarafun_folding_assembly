@@ -7,8 +7,7 @@ config:
     process:
       rows: 3
       columns: 3
-      # data: [0.00005, 0, 0, 0, 0.00005, 0, 0, 0, 0.00005]
-      data: [1, 0, 0, 0, 1, 0, 0, 0, 1]
+      data: [0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01]
     measurement:
       rows: 3
       columns: 3
