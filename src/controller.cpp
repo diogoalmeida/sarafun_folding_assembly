@@ -88,10 +88,11 @@ void foldingController::control(const double &vd, const double &wd, const double
 /*
   Gives the current contact point and angle with surface estimates
 */
-void foldingController::getEstimates(Eigen::Vector3d &pc, double &thetac)
+void foldingController::getEstimates(Eigen::Vector3d &pc, double &thetac, KDL::Frame &pc_frame)
 {
   pc = pc_;
   thetac = thetaC_;
+  pc_frame = pc_frame_;
 }
 
 /* Computes the velocity of the end-effector along the surface normal,
@@ -148,8 +149,10 @@ void foldingController::updateContactPoint()
     case NO_ESTIMATION:
       // code for having a pre-determined contact point
       {
-        KDL::Vector translational_direction = eef_frame_.M.UnitX();
+        KDL::Vector translational_direction = eef_frame_.M.UnitZ();
         KDL::Vector pc_kdl = eef_frame_.p + known_pc_distance_*translational_direction;
+        pc_frame_.M = eef_frame_.M;
+        pc_frame_.p = pc_kdl;
         tf::vectorKDLToEigen(pc_kdl, pc_);
       }
       break;

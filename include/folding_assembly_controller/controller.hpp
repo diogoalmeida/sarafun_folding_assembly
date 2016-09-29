@@ -28,7 +28,7 @@ class foldingController
   public:
     foldingController();
     void control(const double &vd, const double &wd, const double &contact_force, Eigen::Vector3d &vOut, Eigen::Vector3d &wOut, const double d_t);
-    void getEstimates(Eigen::Vector3d &pc, double &thetac);
+    void getEstimates(Eigen::Vector3d &pc, double &thetac, KDL::Frame &pc_frame);
     void updateState(KDL::Frame p1_eig, Eigen::MatrixXd measured_twist_eig);
 
     // Debug methods
@@ -55,7 +55,7 @@ class foldingController
     estimation estimation_type_;
     force_controller force_control_type_;
     KFEstimator1 estimator_;
-    KDL::Frame eef_frame_;
+    KDL::Frame eef_frame_, pc_frame_;
 
     ros::NodeHandle n_;
     ros::Publisher monitorPub_;

@@ -6,6 +6,9 @@
 #include <folding_assembly_controller/FoldingAssemblyAction.h>
 #include <sensor_msgs/JointState.h>
 #include <tf/transform_broadcaster.h>
+#include <tf_conversions/tf_kdl.h>
+
+#include <abb_irb14000_egmri/CompleteFeedback.h>
 
 #include <kdl/kdl.hpp>
 #include <kdl/frames.hpp>
@@ -15,13 +18,12 @@
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include <urdf/model.h>
 
-
 class FoldingAction
 {
 protected:
   ros::NodeHandle nh_;
   actionlib::SimpleActionServer<folding_assembly_controller::FoldingAssemblyAction> action_server_;
-  std::string action_name_, rod_arm_;
+  std::string action_name_, rod_arm_, prefix_;
   std::string yumi_state_topic_, yumi_command_topic_;
 
   folding_assembly_controller::FoldingAssemblyFeedback feedback_;
@@ -31,12 +33,14 @@ protected:
   ros::Subscriber joint_subscriber_;
 
   // TF declarations (for visualisation purposes)
+  tf::Transform p1_tf_, pc_tf_;
 
   foldingController controller_;
   KDL::ChainIkSolverVel_wdls *ikvel_;
   KDL::ChainFkSolverVel_recursive *fkvel_;
   KDL::ChainFkSolverPos_recursive *fkpos_;
   KDL::Chain chain_;
+  KDL::JntArray joint_positions_;
   KDL::Tree tree_;
   urdf::Model model_;
 
@@ -95,15 +99,18 @@ public:
       exit(0);
     }
 
+    joint_positions_.resize(7);
     kdl_parser::treeFromUrdfModel(model_, tree_);
 
     if (rod_arm_ == "left")
     {
       tree_.getChain("base_link", "left_hand_base", chain_);
+      prefix_ = std::string("left_");
     }
     else
     {
       tree_.getChain("base_link", "right_hand_base", chain_);
+      prefix_ = std::string("right_");
     }
 
     ikvel_ = new KDL::ChainIkSolverVel_wdls(chain_, eps_);
@@ -111,46 +118,44 @@ public:
     fkpos_ = new KDL::ChainFkSolverPos_recursive(chain_);
 
     joint_publisher_ = nh_.advertise<sensor_msgs::JointState>(yumi_command_topic_, 1);
-    // joint_subscriber_ = nh_.subscribe(yumi_state_topic_, 1, &FoldingAction::jointStateCallback, this);
+    joint_subscriber_ = nh_.subscribe(yumi_state_topic_, 1, &FoldingAction::jointStateCallback, this);
 
     ROS_INFO("%s is starting the action server...", action_name_.c_str());
     action_server_.start();
     ROS_INFO("%s started!", action_name_.c_str());
   }
 
-  void jointStateCallback()
+  void jointStateCallback(const abb_irb14000_egmri::CompleteFeedbackConstPtr &msg)
   {
-    // TODO: Missing message definition
+    bool success = false;
+    int count = 1;
+    std::string joint_name;
+
+    for (int i=0; i < msg->joint_state.position.size(); i++)
+    {
+      joint_name = prefix_ + std::string("joint_") + std::to_string(count);
+
+      if(msg->joint_state.name[i] == joint_name)
+      {
+        joint_positions_(count - 1) = msg->joint_state.position[i];
+        count ++;
+
+        if(count > 7)
+        {
+          success = true;
+          break;
+        }
+      }
+    }
+
+    if(!success)
+    {
+      ROS_ERROR("%s FOUND %d JOINTS IN THE JOINT STATE CALLBACK!!", action_name_.c_str(), count);
+    }
   }
 
-  void executeCB(const folding_assembly_controller::FoldingAssemblyGoalConstPtr &goal)
+  void getDebugOptions(const folding_assembly_controller::FoldingAssemblyGoalConstPtr &goal)
   {
-    ros::Rate rate(control_frequency_);
-    bool done = false, success = true;
-    ros::Time begin_time = ros::Time::now();
-    ros::Time begin_loop_time = ros::Time::now();
-    ros::Time current_time = ros::Time::now();
-    double elapsed_time_sec, total_time_sec;
-    Eigen::Vector3d v_out, w_out;
-    Eigen::MatrixXd twist_eig(6, 1);
-    Eigen::Matrix<double, 6, 1>  measured_twist_eig;
-    double vd, wd, theta;
-    Eigen::Vector3d contact_point, p1_eig;
-    KDL::JntArray joint_positions, commanded_joint_velocities;
-    KDL::JntArrayVel joint_velocities;
-    KDL::Twist input_twist;
-    KDL::FrameVel v1;
-    KDL::Frame p1;
-
-    geometry_msgs::Twist output_twist;
-    geometry_msgs::Vector3 output_contact_point;
-
-    // Get desired linear and angular velocity
-    vd = goal->desired_velocities.linear.x;
-    wd = goal->desired_velocities.angular.z;
-    desired_contact_force_ = goal->contact_force;
-
-    // Get debug options
     if(goal->estimate_type == goal->NO_ESTIMATE)
     {
       controller_.disableEstimate();
@@ -195,8 +200,40 @@ public:
         }
       }
     }
+  }
+
+  void executeCB(const folding_assembly_controller::FoldingAssemblyGoalConstPtr &goal)
+  {
+    ros::Rate rate(control_frequency_);
+    bool done = false, success = true;
+    ros::Time begin_time = ros::Time::now();
+    ros::Time begin_loop_time = ros::Time::now();
+    ros::Time current_time = ros::Time::now();
+    double elapsed_time_sec, total_time_sec;
+    Eigen::Vector3d v_out, w_out;
+    Eigen::MatrixXd twist_eig(6, 1);
+    Eigen::Matrix<double, 6, 1>  measured_twist_eig;
+    double vd, wd, theta;
+    Eigen::Vector3d contact_point, p1_eig;
+    KDL::JntArray commanded_joint_velocities;
+    KDL::JntArrayVel joint_velocities;
+    KDL::Twist input_twist;
+    KDL::FrameVel v1;
+    KDL::Frame p1, base_link, contact_point_frame;
+    static tf::TransformBroadcaster tf_broadcaster;
+
+    geometry_msgs::Twist output_twist;
+    geometry_msgs::Vector3 output_contact_point;
 
     ROS_INFO("%s received a goal!", action_name_.c_str());
+
+    // Get desired linear and angular velocity
+    vd = goal->desired_velocities.linear.x;
+    wd = goal->desired_velocities.angular.z;
+    desired_contact_force_ = goal->contact_force;
+
+    // Get debug options
+    getDebugOptions(goal);
 
     while(!done)
     {
@@ -210,7 +247,7 @@ public:
       }
 
       // get position of the end-effector
-      fkpos_->JntToCart(joint_positions, p1);
+      fkpos_->JntToCart(joint_positions_, p1);
       // tf::vectorKDLToEigen(p1.p, p1_eig);
 
       // get velocity of the end-effector
@@ -218,13 +255,14 @@ public:
       tf::twistKDLToEigen(v1.deriv(), measured_twist_eig);
 
       controller_.updateState(p1, measured_twist_eig);
+
       current_time = ros::Time::now();
       elapsed_time_sec = (current_time - begin_loop_time).toSec();
       controller_.control(vd, wd, desired_contact_force_, v_out, w_out, elapsed_time_sec);
       begin_loop_time = ros::Time::now();
 
       twist_eig << v_out, w_out;
-      controller_.getEstimates(contact_point, theta);
+      controller_.getEstimates(contact_point, theta, contact_point_frame);
       tf::twistEigenToMsg(twist_eig, output_twist);
       tf::vectorEigenToMsg(contact_point, output_contact_point);
       tf::twistEigenToKDL (twist_eig, input_twist);
@@ -234,11 +272,15 @@ public:
       feedback_.angle_estimate = theta;
       feedback_.elapsed_time = (ros::Time::now() - begin_time).toSec();
       action_server_.publishFeedback(feedback_);
+      tf::poseKDLToTF(p1, p1_tf_);
+      tf::poseKDLToTF(contact_point_frame, pc_tf_);
+      tf_broadcaster.sendTransform(tf::StampedTransform(p1_tf_, ros::Time::now(), "base_link", "end_effector"));
+      tf_broadcaster.sendTransform(tf::StampedTransform(pc_tf_, ros::Time::now(), "base_link", "contact_point"));
 
       // Convert twist to joint velocities
       // Need to get joint positions from yumi
       // joint_position = ...?
-      ikvel_->CartToJnt(joint_positions, input_twist, commanded_joint_velocities);
+      ikvel_->CartToJnt(joint_positions_, input_twist, commanded_joint_velocities);
       publishJointState(commanded_joint_velocities);
 
       // Output joint velocities to yumi
@@ -257,22 +299,12 @@ public:
   void publishJointState(const KDL::JntArray &joint_velocities)
   {
     sensor_msgs::JointState joint_command;
-    std::string prefix;
     // left_joint_1 or right_joint_1, to 7. 1 is closer to base link
     joint_command.header.stamp = ros::Time::now();
 
-    if (rod_arm_ == "left")
-    {
-      prefix = std::string("left_");
-    }
-    else
-    {
-      prefix = std::string("right_");
-    }
-
     for(int i=0; i < chain_.getNrOfJoints(); i++)
     {
-      joint_command.name.push_back(prefix + std::string("joint_") + std::to_string(i));
+      joint_command.name.push_back(prefix_ + std::string("joint_") + std::to_string(i));
       // joint_command.position.push_back(joint_velocities.q(i));
       // joint_command.velocity.push_back(joint_velocities.qdot(i));
       joint_command.velocity.push_back(joint_velocities(i));

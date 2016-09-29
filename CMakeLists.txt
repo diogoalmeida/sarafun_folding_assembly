@@ -13,6 +13,9 @@ find_package(
 	actionlib_msgs
 	kdl_parser
 	sensor_msgs
+	tf_conversions
+	tf
+	abb_irb14000_support
   #Eigen REQUIRED
 )
 

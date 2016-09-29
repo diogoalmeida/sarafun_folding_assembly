@@ -6,7 +6,10 @@ folding_controller:
     w: 0.01
   gains:
     kf: 0.01
-  known_pc_distance: 0.0 # used for testing the controller with no estimation
+  known_pc_distance: 0.5 # used for testing the controller with no estimation
 
 folding_node:
   frequency: 100
+  yumi_state_topic: /yumi_state_topic
+  yumi_command_topic: /yumi_command_topic
+  arm: right
