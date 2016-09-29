@@ -147,6 +147,11 @@ void foldingController::updateContactPoint()
   {
     case NO_ESTIMATION:
       // code for having a pre-determined contact point
+      {
+        KDL::Vector translational_direction = eef_frame_.M.UnitX();
+        KDL::Vector pc_kdl = eef_frame_.p + known_pc_distance_*translational_direction;
+        tf::vectorKDLToEigen(pc_kdl, pc_);
+      }
       break;
     case DIRECT_COMPUTATION:
       // code for computing the contact point directly from measured force and torque
@@ -185,6 +190,12 @@ bool foldingController::getParams()
     ROS_WARN("FT sensor topic name not defined! Will set to default (/config/ft_sensor_topic)");
     wrench_topic_name_ = std::string("/ft_sensor");
   }
+
+  if(!n_.getParam("/folding_controller/known_pc_distance", known_pc_distance_))
+  {
+    ROS_WARN("Hardcoded contact point distance not defined! Will set to zero (/folding_controller/known_pc_distance)");
+    known_pc_distance_ = 0.0;
+  }
 }
 
 /*
@@ -203,9 +214,10 @@ void foldingController::wrenchCallback(const geometry_msgs::WrenchStamped::Const
 /*
   Gets the current end-effector position and velocities computed from KDL
 */
-void foldingController::updateState(const Eigen::Vector3d p1_eig, const Eigen::MatrixXd measured_twist_eig)
+void foldingController::updateState(const KDL::Frame p1_kdl, const Eigen::MatrixXd measured_twist_eig)
 {
-  p1_ = p1_eig;
+  eef_frame_ = p1_kdl;
+  tf::vectorKDLToEigen(p1_kdl.p, p1_);
   measured_v1_ = measured_twist_eig.block<3,1>(0,0);
   measured_w1_ = measured_twist_eig.block<3,1>(3,0);
 }

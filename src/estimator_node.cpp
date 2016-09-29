@@ -119,6 +119,7 @@ public:
       tf::vectorEigenToMsg(contact_point, output_contact_point);
       feedback_.contact_point_estimate = output_contact_point;
       feedback_.contact_point_computed = output_contact_point_computed;
+      feedback_.estimate_norm = contact_point.norm();
       feedback_.elapsed_time = (ros::Time::now() - begin_time).toSec();
       action_server_.publishFeedback(feedback_);
 

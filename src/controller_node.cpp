@@ -4,6 +4,8 @@
 #include <eigen_conversions/eigen_msg.h>
 #include <eigen_conversions/eigen_kdl.h>
 #include <folding_assembly_controller/FoldingAssemblyAction.h>
+#include <sensor_msgs/JointState.h>
+#include <tf/transform_broadcaster.h>
 
 #include <kdl/kdl.hpp>
 #include <kdl/frames.hpp>
@@ -20,9 +22,15 @@ protected:
   ros::NodeHandle nh_;
   actionlib::SimpleActionServer<folding_assembly_controller::FoldingAssemblyAction> action_server_;
   std::string action_name_, rod_arm_;
+  std::string yumi_state_topic_, yumi_command_topic_;
 
   folding_assembly_controller::FoldingAssemblyFeedback feedback_;
   folding_assembly_controller::FoldingAssemblyResult result_;
+
+  ros::Publisher joint_publisher_;
+  ros::Subscriber joint_subscriber_;
+
+  // TF declarations (for visualisation purposes)
 
   foldingController controller_;
   KDL::ChainIkSolverVel_wdls *ikvel_;
@@ -55,9 +63,36 @@ protected:
       rod_arm_ = std::string("right");
     }
 
+    if(!nh_.getParam("/folding_node/yumi_state_topic", yumi_state_topic_))
+    {
+      ROS_ERROR("%s could not retrive yumi's state topic name (/folding_node/yumi_state_topic)!", action_name_.c_str());
+      return false;
+    }
+
+    if(!nh_.getParam("/folding_node/yumi_command_topic", yumi_command_topic_))
+    {
+      ROS_ERROR("%s could not retrive yumi's command topic name (/folding_node/yumi_command_topic)!", action_name_.c_str());
+      return false;
+    }
+
     if(!model_.initParam("/robot_description")){
         ROS_ERROR("ERROR getting robot description");
         return false;
+    }
+
+    return true;
+  }
+
+public:
+
+  FoldingAction(std::string name) :
+    action_server_(nh_, name, boost::bind(&FoldingAction::executeCB, this, _1), false),
+    action_name_(name)
+  {
+    if(!loadParams())
+    {
+      ros::shutdown();
+      exit(0);
     }
 
     kdl_parser::treeFromUrdfModel(model_, tree_);
@@ -75,24 +110,17 @@ protected:
     fkvel_ = new KDL::ChainFkSolverVel_recursive(chain_);
     fkpos_ = new KDL::ChainFkSolverPos_recursive(chain_);
 
-    return true;
-  }
-
-public:
-
-  FoldingAction(std::string name) :
-    action_server_(nh_, name, boost::bind(&FoldingAction::executeCB, this, _1), false),
-    action_name_(name)
-  {
-    if(!loadParams())
-    {
-      ros::shutdown();
-      exit(0);
-    }
+    joint_publisher_ = nh_.advertise<sensor_msgs::JointState>(yumi_command_topic_, 1);
+    // joint_subscriber_ = nh_.subscribe(yumi_state_topic_, 1, &FoldingAction::jointStateCallback, this);
 
     ROS_INFO("%s is starting the action server...", action_name_.c_str());
     action_server_.start();
     ROS_INFO("%s started!", action_name_.c_str());
+  }
+
+  void jointStateCallback()
+  {
+    // TODO: Missing message definition
   }
 
   void executeCB(const folding_assembly_controller::FoldingAssemblyGoalConstPtr &goal)
@@ -183,13 +211,13 @@ public:
 
       // get position of the end-effector
       fkpos_->JntToCart(joint_positions, p1);
-      tf::vectorKDLToEigen(p1.p, p1_eig);
+      // tf::vectorKDLToEigen(p1.p, p1_eig);
 
       // get velocity of the end-effector
       fkvel_->JntToCart(joint_velocities, v1);
       tf::twistKDLToEigen(v1.deriv(), measured_twist_eig);
 
-      controller_.updateState(p1_eig, measured_twist_eig);
+      controller_.updateState(p1, measured_twist_eig);
       current_time = ros::Time::now();
       elapsed_time_sec = (current_time - begin_loop_time).toSec();
       controller_.control(vd, wd, desired_contact_force_, v_out, w_out, elapsed_time_sec);
@@ -211,6 +239,8 @@ public:
       // Need to get joint positions from yumi
       // joint_position = ...?
       ikvel_->CartToJnt(joint_positions, input_twist, commanded_joint_velocities);
+      publishJointState(commanded_joint_velocities);
+
       // Output joint velocities to yumi
       rate.sleep();
     }
@@ -222,6 +252,33 @@ public:
       ROS_INFO("%s has succeeded!", action_name_.c_str());
       action_server_.setSucceeded(result_);
     }
+  }
+
+  void publishJointState(const KDL::JntArray &joint_velocities)
+  {
+    sensor_msgs::JointState joint_command;
+    std::string prefix;
+    // left_joint_1 or right_joint_1, to 7. 1 is closer to base link
+    joint_command.header.stamp = ros::Time::now();
+
+    if (rod_arm_ == "left")
+    {
+      prefix = std::string("left_");
+    }
+    else
+    {
+      prefix = std::string("right_");
+    }
+
+    for(int i=0; i < chain_.getNrOfJoints(); i++)
+    {
+      joint_command.name.push_back(prefix + std::string("joint_") + std::to_string(i));
+      // joint_command.position.push_back(joint_velocities.q(i));
+      // joint_command.velocity.push_back(joint_velocities.qdot(i));
+      joint_command.velocity.push_back(joint_velocities(i));
+    }
+
+    joint_publisher_.publish(joint_command);
   }
 };
 

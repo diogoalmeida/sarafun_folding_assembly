@@ -6,9 +6,11 @@
 #include <folding_assembly_controller/contact_point_estimator.hpp>
 // #include <tf/transform_listener.h>
 #include <Eigen/Dense>
+#include <kdl/frames.hpp>
 #include <math.h>
 // #include <robot_arm/robot_arm.hpp>
 #include <tf_conversions/tf_kdl.h>
+#include <eigen_conversions/eigen_kdl.h>
 #include <folding_assembly_controller/monitorMsg.h>
 #include <vector>
 #include <eigen_conversions/eigen_msg.h>
@@ -27,7 +29,7 @@ class foldingController
     foldingController();
     void control(const double &vd, const double &wd, const double &contact_force, Eigen::Vector3d &vOut, Eigen::Vector3d &wOut, const double d_t);
     void getEstimates(Eigen::Vector3d &pc, double &thetac);
-    void updateState(Eigen::Vector3d p1_eig, Eigen::MatrixXd measured_twist_eig);
+    void updateState(KDL::Frame p1_eig, Eigen::MatrixXd measured_twist_eig);
 
     // Debug methods
     void disableEstimate();
@@ -48,10 +50,12 @@ class foldingController
                     measured_v1_, measured_w1_;
     double saturationV_, saturationW_, dt_;
     double thetaC_, fRef_, kf_;
+    double known_pc_distance_;
     std::string wrench_topic_name_;
     estimation estimation_type_;
     force_controller force_control_type_;
     KFEstimator1 estimator_;
+    KDL::Frame eef_frame_;
 
     ros::NodeHandle n_;
     ros::Publisher monitorPub_;

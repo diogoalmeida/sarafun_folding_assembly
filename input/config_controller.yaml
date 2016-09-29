@@ -6,6 +6,7 @@ folding_controller:
     w: 0.01
   gains:
     kf: 0.01
+  known_pc_distance: 0.0 # used for testing the controller with no estimation
 
 folding_node:
   frequency: 100

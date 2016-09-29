@@ -3,5 +3,6 @@
 float64 elapsed_time
 ---
 geometry_msgs/Vector3 contact_point_estimate
+float64 estimate_norm
 geometry_msgs/Vector3 contact_point_computed
 float64 elapsed_time

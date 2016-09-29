@@ -12,9 +12,11 @@ find_package(
 	actionlib
 	actionlib_msgs
 	kdl_parser
+	sensor_msgs
   #Eigen REQUIRED
 )
 
+add_definitions(-std=c++11)
 link_directories(${catkin_LIBRARY_DIRS})
 
 add_message_files(
