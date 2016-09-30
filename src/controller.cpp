@@ -46,7 +46,7 @@ void foldingController::control(const double &vd, const double &wd, const double
   fRef_ = contact_force;
 
   // Need to be able to get surface tangent and normal
-  surfaceTangent_ << 1, 0, 0;
+  surfaceTangent_ << 0, 1, 0;
   surfaceNormal_ << 0, 0, 1;
 
   // updateSurfaceTangent();
@@ -118,7 +118,7 @@ Eigen::Vector3d foldingController::computeForceControl()
       forceDirection = -surfaceTangent_;
       break;
     case ROD_FORCE_CONTROL:
-      forceDirection = -cos(thetaC_)*surfaceTangent_ + sin(thetaC_)*surfaceNormal_; // The robot will apply force in the direction of the rod piece
+      tf::vectorKDLToEigen(eef_frame_.M.UnitZ(), forceDirection);//-cos(thetaC_)*surfaceTangent_ + sin(thetaC_)*surfaceNormal_; // The robot will apply force in the direction of the rod piece
       break;
   }
   // Eigen::Vector3d forceDirection = surfaceNormal_; // The robot will apply force in the direction of the rod piece
@@ -126,7 +126,7 @@ Eigen::Vector3d foldingController::computeForceControl()
   force_norm = f2_.norm();
   force_error = fRef_ - force_norm;
 
-  v_f = -kf_ * force_error;
+  v_f = kf_ * force_error;
 
   return v_f*forceDirection;
 }
