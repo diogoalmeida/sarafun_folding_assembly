@@ -25,6 +25,7 @@ protected:
   actionlib::SimpleActionServer<folding_assembly_controller::FoldingAssemblyAction> action_server_;
   std::string action_name_, rod_arm_, prefix_;
   std::string yumi_state_topic_, yumi_command_topic_;
+  std::string left_tooltip_name_, right_tooltip_name_;
 
   folding_assembly_controller::FoldingAssemblyFeedback feedback_;
   folding_assembly_controller::FoldingAssemblyResult result_;
@@ -79,6 +80,18 @@ protected:
       return false;
     }
 
+    if(!nh_.getParam("/folding_node/right_tooltip_name", right_tooltip_name_))
+    {
+      ROS_ERROR("%s could not retrive yumi's right_tooltip_name (/folding_node/right_tooltip_name)!", action_name_.c_str());
+      return false;
+    }
+
+    if(!nh_.getParam("/folding_node/left_tooltip_name", left_tooltip_name_))
+    {
+      ROS_ERROR("%s could not retrive yumi's left_tooltip_name (/folding_node/left_tooltip_name)!", action_name_.c_str());
+      return false;
+    }
+
     if(!model_.initParam("/robot_description")){
         ROS_ERROR("ERROR getting robot description");
         return false;
@@ -104,12 +117,13 @@ public:
 
     if (rod_arm_ == "left")
     {
-      tree_.getChain("base_link", "left_hand_base", chain_);
+      tree_.getChain("base_link", left_tooltip_name_, chain_);
       prefix_ = std::string("left_");
     }
     else
     {
-      tree_.getChain("base_link", "right_hand_base", chain_);
+      tree_.getChain("base_link", right_tooltip_name_, chain_);
+      ROS_INFO("NUM OF CHAIN LINKS: %d", chain_.getNrOfJoints());
       prefix_ = std::string("right_");
     }
 
@@ -138,6 +152,7 @@ public:
       if(msg->joint_state.name[i] == joint_name)
       {
         joint_positions_(count - 1) = msg->joint_state.position[i];
+        // ROS_INFO("Getting joint position %d: %.6f", count, joint_positions_(count-1));
         count ++;
 
         if(count > 7)
@@ -302,12 +317,21 @@ public:
     // left_joint_1 or right_joint_1, to 7. 1 is closer to base link
     joint_command.header.stamp = ros::Time::now();
 
+    for(int i=0; i < 7; i++)
+    {
+      joint_command.name.push_back("hack");
+      joint_command.velocity.push_back(0.0);
+      joint_command.position.push_back(0);
+      joint_command.effort.push_back(0);
+    }
+
     for(int i=0; i < chain_.getNrOfJoints(); i++)
     {
       joint_command.name.push_back(prefix_ + std::string("joint_") + std::to_string(i));
-      // joint_command.position.push_back(joint_velocities.q(i));
+      joint_command.position.push_back(0);
       // joint_command.velocity.push_back(joint_velocities.qdot(i));
       joint_command.velocity.push_back(joint_velocities(i));
+      joint_command.effort.push_back(0);
     }
 
     joint_publisher_.publish(joint_command);

@@ -2,14 +2,16 @@
 folding_controller:
   estimate: false
   saturation:
-    v: 0.01
-    w: 0.01
+    v: 0.1
+    w: 0.1
   gains:
-    kf: 0.01
-  known_pc_distance: 0.5 # used for testing the controller with no estimation
+    kf: 0.005
+  known_pc_distance: 0.16 # used for testing the controller with no estimation
 
 folding_node:
   frequency: 100
-  yumi_state_topic: /yumi_state_topic
-  yumi_command_topic: /yumi_command_topic
+  yumi_state_topic: /egmri_feedback_topic
+  yumi_command_topic: /egmri_commanded_topic
   arm: right
+  left_tooltip_name: left_gripper_base
+  right_tooltip_name: right_gripper_base
