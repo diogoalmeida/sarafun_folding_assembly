@@ -39,6 +39,8 @@ Eigen::Matrix3d foldingController::computeSkewSymmetric(Eigen::Vector3d v)
 
 void foldingController::control(const double &vd, const double &wd, const double &contact_force, Eigen::Vector3d &vOut, Eigen::Vector3d &wOut, const double d_t)
 {
+  tf::StampedTransform ft_sensor_transform;
+  KDL::Frame ft_sensor_kdl;
   Eigen::Matrix3d S;
   Eigen::Vector3d rotationAxis, omegaD, velD;
 
@@ -46,8 +48,13 @@ void foldingController::control(const double &vd, const double &wd, const double
   fRef_ = contact_force;
 
   // Need to be able to get surface tangent and normal
-  surfaceTangent_ << 0, 1, 0;
-  surfaceNormal_ << 0, 0, 1;
+  // surfaceTangent_ << 0, 1, 0;
+  // surfaceNormal_ << 0, 0, 1;
+  tf_listener_.lookupTransform(ft_sensor_frame_, base_frame_, ros::Time(0), ft_sensor_transform);
+  tf::transformTFToKDL(ft_sensor_transform, ft_sensor_kdl);
+  tf::vectorKDLToEigen(ft_sensor_kdl.M.UnitY(), surfaceTangent_);
+  tf::vectorKDLToEigen(ft_sensor_kdl.M.UnitZ(), surfaceNormal_);
+  tf::vectorKDLToEigen(ft_sensor_kdl.p, p2_); // "surface piece end-effector"
 
   // updateSurfaceTangent();
   // updateSurfaceNormal();
@@ -161,7 +168,7 @@ void foldingController::updateContactPoint()
       }
       break;
     case DIRECT_COMPUTATION:
-      // code for computing the contact point directly from measured force and torque
+      pc_ = -t2_(1)/f2_(2)*surfaceNormal_;
       break;
     case KALMAN_FILTER:
       pc_ = estimator_.estimate(measured_v1_, measured_w1_, f2_, t2_, p1_, p2_, dt_);
@@ -202,6 +209,18 @@ bool foldingController::getParams()
   {
     ROS_WARN("Hardcoded contact point distance not defined! Will set to zero (/folding_controller/known_pc_distance)");
     known_pc_distance_ = 0.0;
+  }
+
+  if(!n_.getParam("/folding_controller/base_frame", base_frame_))
+  {
+    ROS_WARN("Base frame name not given! Will set to /base_frame (/folding_controller/base_frame)");
+    base_frame_ = "/base_frame";
+  }
+
+  if(!n_.getParam("/folding_controller/ft_frame", ft_sensor_frame_))
+  {
+    ROS_WARN("Sensor frame name not given! Will set to /ft (/folding_controller/ft_frame)");
+    ft_sensor_frame_ = "/ft";
   }
 }
 

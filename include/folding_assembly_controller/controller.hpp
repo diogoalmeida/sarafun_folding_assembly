@@ -4,7 +4,7 @@
 #include <geometry_msgs/Vector3.h>
 #include <geometry_msgs/WrenchStamped.h>
 #include <folding_assembly_controller/contact_point_estimator.hpp>
-// #include <tf/transform_listener.h>
+#include <tf/transform_listener.h>
 #include <Eigen/Dense>
 #include <kdl/frames.hpp>
 #include <math.h>
@@ -52,9 +52,14 @@ class foldingController
     double saturationV_, saturationW_, dt_;
     double thetaC_, fRef_, kf_;
     double known_pc_distance_;
-    std::string wrench_topic_name_;
+
+    tf::TransformListener tf_listener_;
+
+    std::string wrench_topic_name_, ft_sensor_frame_, base_frame_;
+
     estimation estimation_type_;
     force_controller force_control_type_;
+
     KFEstimator1 estimator_;
     KDL::Frame eef_frame_, pc_frame_;
 

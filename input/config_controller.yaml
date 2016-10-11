@@ -7,6 +7,8 @@ folding_controller:
   gains:
     kf: 0.005
   known_pc_distance: 0.16 # used for testing the controller with no estimation
+  base_frame: /base_frame # name of the world frame (TF)
+  ft_frame: /ft # name of the force torque sensor frame (TF)
 
 folding_node:
   frequency: 100
