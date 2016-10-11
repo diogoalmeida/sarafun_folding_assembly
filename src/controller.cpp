@@ -106,6 +106,7 @@ Eigen::Vector3d foldingController::computeForceControl()
   // Requires access to sensor force measurements
   double v_f, force_norm, force_error;
   Eigen::Vector3d forceDirection;
+
   switch(force_control_type_)
   {
     case NO_FORCE_CONTROL:
@@ -118,7 +119,10 @@ Eigen::Vector3d foldingController::computeForceControl()
       forceDirection = -surfaceTangent_;
       break;
     case ROD_FORCE_CONTROL:
-      tf::vectorKDLToEigen(eef_frame_.M.UnitZ(), forceDirection);//-cos(thetaC_)*surfaceTangent_ + sin(thetaC_)*surfaceNormal_; // The robot will apply force in the direction of the rod piece
+      forceDirection = r1_/r1_.norm(); //The robot will apply force in the direction of the rod piece
+      break;
+    case DEBUG_ROD_FORCE_CONTROL:
+      tf::vectorKDLToEigen(eef_frame_.M.UnitZ(), forceDirection); // uses the direction of the end-effector rather than the estimate
       break;
   }
   // Eigen::Vector3d forceDirection = surfaceNormal_; // The robot will apply force in the direction of the rod piece
@@ -260,4 +264,9 @@ void foldingController::tangentForceControl()
 void foldingController::rodForceControl()
 {
   force_control_type_ = ROD_FORCE_CONTROL;
+}
+
+void foldingController::debugRodForceControl()
+{
+  force_control_type_ = DEBUG_ROD_FORCE_CONTROL;
 }

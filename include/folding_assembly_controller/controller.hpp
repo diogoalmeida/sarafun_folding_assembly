@@ -16,7 +16,7 @@
 #include <eigen_conversions/eigen_msg.h>
 
 enum estimation {NO_ESTIMATION, DIRECT_COMPUTATION, KALMAN_FILTER};
-enum force_controller {NO_FORCE_CONTROL, NORMAL_FORCE_CONTROL, TANGENTIAL_FORCE_CONTROL, ROD_FORCE_CONTROL};
+enum force_controller {NO_FORCE_CONTROL, NORMAL_FORCE_CONTROL, TANGENTIAL_FORCE_CONTROL, ROD_FORCE_CONTROL, DEBUG_ROD_FORCE_CONTROL};
 
 /*
 Folding Controller
@@ -39,6 +39,7 @@ class foldingController
     void normalForceControl();
     void tangentForceControl();
     void rodForceControl();
+    void debugRodForceControl();
   protected:
     Eigen::Vector3d surfaceNormal_, surfaceTangent_,
                     p1_, p2_, r1_,

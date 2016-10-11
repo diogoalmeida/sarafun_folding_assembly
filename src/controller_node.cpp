@@ -212,6 +212,13 @@ public:
           {
             controller_.rodForceControl();
           }
+          else
+          {
+            if(goal->force_control_type == goal->DEBUG_ROD_FORCE_CONTROL)
+            {
+              controller_.debugRodForceControl();
+            }
+          }
         }
       }
     }
