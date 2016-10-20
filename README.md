@@ -14,7 +14,7 @@ Actionlib provides the user with a simple graphical interface that allows for se
 
 ```$ rosrun actionlib axclient.py /action_name action_message```
 
-![Actionlib GUI](http://imgur.com/a/6bM00)
+![Actionlib GUI](http://i.imgur.com/qMchOS4.png)
 
 Estimator action server
 ---
