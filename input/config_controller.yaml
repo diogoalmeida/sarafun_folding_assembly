@@ -1,6 +1,5 @@
 # Configuration file for the folding assembly controller
 folding_controller:
-  estimate: false
   saturation:
     v: 0.1
     w: 0.1

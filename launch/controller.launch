@@ -2,21 +2,29 @@
 <launch>
   <arg name="simmode"  default="false" />
   <arg name="rvizconfig" default="$(find folding_assembly_controller)/rviz_abb.rviz" />
+  <arg name="test_estimator" default="false" />
+  <arg name="test_folding" default="true" />
 
   <arg name="model" default="$(find abb_irb14000_support)/urdf/irb14000.xacro" />
   <param name="robot_description" command="$(find xacro)/xacro.py $(arg model)" />
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
 
-  <arg name="controller_parameters" default="$(find folding_assembly_controller)/input/config_controller.yaml"/>
   <arg name="estimator_parameters" default="$(find folding_assembly_controller)/input/config_estimator.yaml"/>
-
-  <rosparam command="load" file="$(arg controller_parameters)"/>
+  <arg name="controller_parameters" default="$(find folding_assembly_controller)/input/config_controller.yaml"/>
   <rosparam command="load" file="$(arg estimator_parameters)"/>
+  <rosparam command="load" file="$(arg controller_parameters)"/>
 
-  <node name="folding_assembly_node" pkg="folding_assembly_controller" type="folding_assembly_node" output="screen"/>
-  <node name="estimator_node" pkg="folding_assembly_controller" type="estimator_node" output="screen"/>
+  <group if="$(arg test_estimator)">
+    <node name="estimator_node" pkg="folding_assembly_controller" type="estimator_node" output="screen"/>
+  </group>
+
+  <group unless="$(arg test_estimator)">
+    <group if="$(arg test_folding)">
+      <node name="folding_assembly_node" pkg="folding_assembly_controller" type="folding_assembly_node" output="screen"/>
+    </group>
+  </group>
 
   <group if="$(arg simmode)">
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
   </group>
 </launch>

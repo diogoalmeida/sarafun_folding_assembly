@@ -18,3 +18,6 @@ config:
     data: [1.0, 0, 0, 0.0, 1.0, 0, 0, 0, 1.0]
   ft_sensor_topic: /optoforce_node/wrench_IRE005
   z_offset: 0
+
+folding_node:
+  frequency: 100

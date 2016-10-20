@@ -26,9 +26,9 @@ protected:
   /* Load the node parameters */
   bool loadParams()
   {
-    if(!nh_.getParam("/folding_node/frequency", estimate_frequency_))
+    if(!nh_.getParam("/estimator_node/frequency", estimate_frequency_))
     {
-      ROS_ERROR("%s could not retrive estimation frequency (/folding_node/frequency)!", action_name_.c_str());
+      ROS_ERROR("%s could not retrive estimation frequency (/estimator_node/frequency)!", action_name_.c_str());
       return false;
     }
 
