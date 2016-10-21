@@ -8,9 +8,17 @@ This package provides the folding assembly functionality to the SARAFun project.
 
 Both implementations offer the ability to configure how the algorithms are executed. This file details how to use the implemented servers.
 
+Starting the action servers
+---
+To launch the estimator stand-alone server, run in a terminal shell:
+
+```$ roslaunch folding_assembly_controller controller.launch test_estimator:=true```
+
+To run the integral folding controller, set the flag ```test_estimator``` to false (default behavior). Note that the stand-alone estimator will use a random walk process model.
+
 Triggering an actionlib server manually
 ---
-Actionlib provides the user with a simple graphical interface that allows for sending goal messages and monitor feedback, as well as preempting the action. Preemption and goal sending is handled by buttons in the GUI. On success, preemption or abortion, the result is displayed. To run the action client you need to type, in a terminal shell:
+Actionlib provides the user with a simple graphical interface that allows for sending goal messages and monitor feedback, as well as preempting the action. Preemption and goal sending is handled by buttons in the GUI. On success, preemption or abortion, the result is displayed. To run the action client you need to type:
 
 ```$ rosrun actionlib axclient.py /action_name action_message```
 
