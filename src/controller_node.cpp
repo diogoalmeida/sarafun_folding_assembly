@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <folding_assembly_controller/controller.hpp>
 #include <actionlib/server/simple_action_server.h>
+#include <Eigen/Dense>
 #include <eigen_conversions/eigen_msg.h>
 #include <eigen_conversions/eigen_kdl.h>
 #include <folding_assembly_controller/FoldingAssemblyAction.h>
