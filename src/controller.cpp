@@ -37,12 +37,13 @@ Eigen::Matrix3d foldingController::computeSkewSymmetric(Eigen::Vector3d v)
   return S;
 }
 
-void foldingController::control(const double &vd, const double &wd, const double &contact_force, Eigen::Vector3d &vOut, Eigen::Vector3d &wOut, const double d_t)
+void foldingController::control(const double &vd, const double &wd, const double &contact_force, const double &final_angle, Eigen::Vector3d &vOut, Eigen::Vector3d &wOut, const double d_t)
 {
   tf::StampedTransform ft_sensor_transform;
   KDL::Frame ft_sensor_kdl;
   Eigen::Matrix3d S;
   Eigen::Vector3d rotationAxis, omegaD, velD;
+  double orientation_error;
 
   dt_ = d_t;
   fRef_ = contact_force;
@@ -59,10 +60,11 @@ void foldingController::control(const double &vd, const double &wd, const double
   // updateSurfaceTangent();
   // updateSurfaceNormal();
   updateTheta();
+  orientation_error = final_angle - thetaC_;
 
   rotationAxis = surfaceTangent_.cross(surfaceNormal_);
 
-  omegaD = wd*rotationAxis;
+  omegaD = wd*saturateAngle(orientation_error)*rotationAxis;
   velD = vd*surfaceTangent_;
 
   updateContactPoint();
@@ -90,6 +92,24 @@ void foldingController::control(const double &vd, const double &wd, const double
 
     vOut = v1_;
     wOut = w1_;
+}
+
+/*
+  Return x < 1 for |error| < breaking_error and 1 otherwise
+*/
+double foldingController::saturateAngle(double error)
+{
+  if (breaking_error_ == 0) // disabled
+  {
+    return 1;
+  }
+
+  if (std::abs(error) > breaking_error_)
+  {
+    return 1;
+  }
+
+  return error/breaking_error_;
 }
 
 /*
@@ -221,6 +241,17 @@ bool foldingController::getParams()
   {
     ROS_WARN("Sensor frame name not given! Will set to /ft (/folding_controller/ft_frame)");
     ft_sensor_frame_ = "/ft";
+  }
+
+  if(!n_.getParam("/folding_controller/breaking_error", breaking_error_))
+  {
+    ROS_WARN("Missing breaking error (/folding_controller/breaking_error)");
+    breaking_error_ = M_PI/8;
+  }
+
+  if(breaking_error_ == 0)
+  {
+    ROS_WARN("Breaking error set to 0! This will disable angular feedback");
   }
 }
 

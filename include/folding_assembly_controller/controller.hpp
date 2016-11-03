@@ -27,7 +27,7 @@ class foldingController
 {
   public:
     foldingController();
-    void control(const double &vd, const double &wd, const double &contact_force, Eigen::Vector3d &vOut, Eigen::Vector3d &wOut, const double d_t);
+    void control(const double &vd, const double &wd, const double &contact_force, const double &final_angle, Eigen::Vector3d &vOut, Eigen::Vector3d &wOut, const double d_t);
     void getEstimates(Eigen::Vector3d &pc, double &thetac, KDL::Frame &pc_frame);
     void updateState(KDL::Frame p1_eig, Eigen::MatrixXd measured_twist_eig);
 
@@ -52,6 +52,7 @@ class foldingController
     double saturationV_, saturationW_, dt_;
     double thetaC_, fRef_, kf_;
     double known_pc_distance_;
+    double breaking_error_;
 
     tf::TransformListener tf_listener_;
 
@@ -77,5 +78,6 @@ class foldingController
     void getPoints(Eigen::Vector3d &realPc, Eigen::Vector3d &p1, Eigen::Vector3d &p2);
     bool getParams();
     void wrenchCallback(const geometry_msgs::WrenchStamped::ConstPtr& msg);
+    double saturateAngle(double error);
 };
 #endif

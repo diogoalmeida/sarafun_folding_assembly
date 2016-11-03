@@ -46,7 +46,7 @@ protected:
   KDL::Tree tree_;
   urdf::Model model_;
 
-  double control_frequency_, desired_contact_force_, eps_;
+  double control_frequency_, desired_contact_force_, eps_, desired_final_angle_;
 
   /* Load the node parameters */
   bool loadParams()
@@ -254,6 +254,7 @@ public:
     vd = goal->desired_velocities.linear.x;
     wd = goal->desired_velocities.angular.z;
     desired_contact_force_ = goal->contact_force;
+    desired_final_angle_ = goal->final_orientation;
 
     // Get debug options
     getDebugOptions(goal);
@@ -281,7 +282,7 @@ public:
 
       current_time = ros::Time::now();
       elapsed_time_sec = (current_time - begin_loop_time).toSec();
-      controller_.control(vd, wd, desired_contact_force_, v_out, w_out, elapsed_time_sec);
+      controller_.control(vd, wd, desired_contact_force_, desired_final_angle_, v_out, w_out, elapsed_time_sec);
       begin_loop_time = ros::Time::now();
 
       twist_eig << v_out, w_out;

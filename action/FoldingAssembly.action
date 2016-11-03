@@ -1,4 +1,5 @@
 geometry_msgs/Twist desired_velocities # Uses linear.x and angular.z respectively for desired sliding and rotational velocities
+float64 final_orientation # desired final orientation in radians w.r.t surface object for the controller
 float64 contact_force
 
 # Debug options
@@ -14,7 +15,7 @@ int32 NO_FORCE_CONTROL=1  # Only executes the kinematic part of the controller
 int32 CONTROL_ALONG_NORMAL=2  # Applies a velocity term that takes into account force feedback along the normal
 int32 CONTROL_ALONG_TANGENT=3  #  "    "  along the tangent
 int32 CONTROL_ALONG_ROD=4  # Uses the contact point estimate to apply a force feedback velocity component along the rod piece
-int32 DEBUG_ROD_FORCE_CONTROL=5  # Applies a force feedback velocity component along a hardcoded rod piece direction 
+int32 DEBUG_ROD_FORCE_CONTROL=5  # Applies a force feedback velocity component along a hardcoded rod piece direction
 ---
 float64 elapsed_time
 ---

@@ -8,6 +8,7 @@ folding_controller:
   known_pc_distance: 0.16 # used for testing the controller with no estimation
   base_frame: /base_frame # name of the world frame (TF)
   ft_frame: /ft # name of the force torque sensor frame (TF)
+  breaking_error: 0.78539816339 # When the part gets within **breaking_error** radians from the desired final orientation, the controller will start slowing down
 
 folding_node:
   frequency: 100
