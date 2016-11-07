@@ -47,6 +47,33 @@ protected:
 
   double control_frequency_, desired_contact_force_, eps_;
 
+  /*
+    Runs the required code to preempt the controller
+  */
+  bool handlePreemption(ros::Time begin_time)
+  {
+    KDL::JntArray commanded_joint_velocities;
+    commanded_joint_velocities.resize(chain_.getNrOfJoints());
+
+    if(action_server_.isPreemptRequested() || !ros::ok())
+    {
+      ROS_WARN("%s was preempted!", action_name_.c_str());
+
+      for (int i = 0; i < chain_.getNrOfJoints(); i++)
+      {
+          commanded_joint_velocities(i) = 0.0;
+      }
+
+      publishJointState(commanded_joint_velocities);
+      result_.elapsed_time = (ros::Time::now() - begin_time).toSec();
+      action_server_.setPreempted(result_);
+      success = false;
+      return true;
+    }
+
+    return false;
+  }
+
   /* Load the node parameters */
   bool loadParams()
   {
@@ -259,19 +286,8 @@ public:
 
     while(!done)
     {
-      if(action_server_.isPreemptRequested() || !ros::ok())
+      if(handlePreemption(begin_time))
       {
-        ROS_WARN("%s was preempted!", action_name_.c_str());
-
-        for (int i = 0; i < commanded_joint_velocities.columns(); i++)
-        {
-            commanded_joint_velocities(i) = 0;
-        }
-
-        publishJointState(commanded_joint_velocities);
-        result_.elapsed_time = (ros::Time::now() - begin_time).toSec();
-        action_server_.setPreempted(result_);
-        success = false;
         break;
       }
 
@@ -330,9 +346,16 @@ public:
     sensor_msgs::JointState joint_command;
     // left_joint_1 or right_joint_1, to 7. 1 is closer to base link
     joint_command.header.stamp = ros::Time::now();
+    std::string other_arm;
 
-    std::string other_arm = (prefix_=="left_")? "right_":"left_";
-
+    if (prefix_ == "left_")
+    {
+      other_arm = "right_";
+    }
+    else
+    {
+      other_arm = "left_";
+    }
 
     for(int i=0; i < chain_.getNrOfJoints(); i++)
     {
@@ -343,10 +366,10 @@ public:
       joint_command.effort.push_back(0.0);
     }
 
-    for(int i=0; i < 7; i++)
+    for(int i=0; i < chain_.getNrOfJoints(); i++)
     {
     //joint_command.name.push_back("hack");
-      joint_command.name.push_back(other_arm+std::string("joint_")+std::to_string(i+1));
+      joint_command.name.push_back(other_arm + std::string("joint_") + std::to_string(i+1));
       joint_command.velocity.push_back(0.0);
       joint_command.position.push_back(0.0);
       joint_command.effort.push_back(0.0);
