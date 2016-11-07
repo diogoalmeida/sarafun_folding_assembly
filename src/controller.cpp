@@ -177,13 +177,13 @@ void foldingController::updateContactPoint()
     case DIRECT_COMPUTATION:
       pc_temp = -t2_(1)/f2_(2)*surfaceNormal_; // This is in the sensor frame
       tf::vectorEigenToKDL(pc_temp, pc_kdl);
-      pc_kdl = ft_sensor_frame_*pc_kdl;
+      pc_kdl = ft_sensor_frame_.Inverse()*pc_kdl;
       tf::vectorKDLToEigen(pc_kdl, pc_);
       break;
     case KALMAN_FILTER:
       pc_temp = estimator_.estimate(measured_v1_, measured_w1_, f2_, t2_, p1_, p2_, dt_); // This is in the sensor frame
       tf::vectorEigenToKDL(pc_temp, pc_kdl);
-      pc_kdl = ft_sensor_frame_*pc_kdl;
+      pc_kdl = ft_sensor_frame_.Inverse()*pc_kdl;
       tf::vectorKDLToEigen(pc_kdl, pc_);
       break;
   }
