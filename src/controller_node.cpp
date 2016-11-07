@@ -153,7 +153,6 @@ public:
       if(msg->joint_state.name[i] == joint_name)
       {
         joint_positions_(count - 1) = msg->joint_state.position[i];
-        ROS_INFO("Getting joint position %d: %.6f", count, joint_positions_(count-1));
         count ++;
 
         if(count > 7)
