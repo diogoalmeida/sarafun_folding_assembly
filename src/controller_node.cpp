@@ -67,11 +67,10 @@ protected:
       publishJointState(commanded_joint_velocities);
       result_.elapsed_time = (ros::Time::now() - begin_time).toSec();
       action_server_.setPreempted(result_);
-      success = false;
-      return true;
+      return false;
     }
 
-    return false;
+    return true;
   }
 
   /* Load the node parameters */
@@ -286,7 +285,8 @@ public:
 
     while(!done)
     {
-      if(handlePreemption(begin_time))
+      success = handlePreemption(begin_time);
+      if(!success)
       {
         break;
       }
