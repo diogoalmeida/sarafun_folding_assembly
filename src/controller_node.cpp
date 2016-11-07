@@ -8,7 +8,7 @@
 #include <tf/transform_broadcaster.h>
 #include <tf_conversions/tf_kdl.h>
 
-#include <abb_irb14000_egmri/CompleteFeedback.h>
+#include <sarafun_msgs/CompleteFeedback.h>
 
 #include <kdl/kdl.hpp>
 #include <kdl/frames.hpp>
@@ -118,6 +118,7 @@ public:
     if (rod_arm_ == "left")
     {
       tree_.getChain("base_link", left_tooltip_name_, chain_);
+      ROS_INFO("NUM OF CHAIN LINKS: %d", chain_.getNrOfJoints());
       prefix_ = std::string("left_");
     }
     else
@@ -139,7 +140,7 @@ public:
     ROS_INFO("%s started!", action_name_.c_str());
   }
 
-  void jointStateCallback(const abb_irb14000_egmri::CompleteFeedbackConstPtr &msg)
+  void jointStateCallback(const sarafun_msgs::CompleteFeedbackConstPtr &msg)
   {
     bool success = false;
     int count = 1;
@@ -152,7 +153,7 @@ public:
       if(msg->joint_state.name[i] == joint_name)
       {
         joint_positions_(count - 1) = msg->joint_state.position[i];
-        // ROS_INFO("Getting joint position %d: %.6f", count, joint_positions_(count-1));
+        ROS_INFO("Getting joint position %d: %.6f", count, joint_positions_(count-1));
         count ++;
 
         if(count > 7)
@@ -324,21 +325,25 @@ public:
     // left_joint_1 or right_joint_1, to 7. 1 is closer to base link
     joint_command.header.stamp = ros::Time::now();
 
-    for(int i=0; i < 7; i++)
-    {
-      joint_command.name.push_back("hack");
-      joint_command.velocity.push_back(0.0);
-      joint_command.position.push_back(0);
-      joint_command.effort.push_back(0);
-    }
+    std::string other_arm = (prefix_=="left_")? "right_":"left_";
+
 
     for(int i=0; i < chain_.getNrOfJoints(); i++)
     {
-      joint_command.name.push_back(prefix_ + std::string("joint_") + std::to_string(i));
-      joint_command.position.push_back(0);
+      joint_command.name.push_back(prefix_ + std::string("joint_") + std::to_string(i+1));
+      joint_command.position.push_back(0.0);
       // joint_command.velocity.push_back(joint_velocities.qdot(i));
       joint_command.velocity.push_back(joint_velocities(i));
-      joint_command.effort.push_back(0);
+      joint_command.effort.push_back(0.0);
+    }
+
+    for(int i=0; i < 7; i++)
+    {
+    //joint_command.name.push_back("hack");
+      joint_command.name.push_back(other_arm+std::string("joint_")+std::to_string(i+1));
+      joint_command.velocity.push_back(0.0);
+      joint_command.position.push_back(0.0);
+      joint_command.effort.push_back(0.0);
     }
 
     joint_publisher_.publish(joint_command);

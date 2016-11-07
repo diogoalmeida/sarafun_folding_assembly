@@ -48,12 +48,18 @@ void foldingController::control(const double &vd, const double &wd, const double
   fRef_ = contact_force;
 
   // Need to be able to get surface tangent and normal
-  // surfaceTangent_ << 0, 1, 0;
-  // surfaceNormal_ << 0, 0, 1;
+   //surfaceTangent_ << 0, 1, 0;
+   //surfaceNormal_ << 0, 0, 1;
+  std::cout <<"Sensor frame: "<< ft_sensor_frame_<< " Base frame: "<< base_frame_<<std::endl;
   tf_listener_.lookupTransform(ft_sensor_frame_, base_frame_, ros::Time(0), ft_sensor_transform);
   tf::transformTFToKDL(ft_sensor_transform, ft_sensor_kdl);
-  tf::vectorKDLToEigen(ft_sensor_kdl.M.UnitY(), surfaceTangent_);
+//  tf::vectorKDLToEigen(ft_sensor_kdl.M.UnitY(), surfaceTangent_);
+//  tf::vectorKDLToEigen(ft_sensor_kdl.M.UnitZ(), surfaceNormal_);
+
+  tf::vectorKDLToEigen(ft_sensor_kdl.M.UnitX(), surfaceTangent_);
   tf::vectorKDLToEigen(ft_sensor_kdl.M.UnitZ(), surfaceNormal_);
+
+
   tf::vectorKDLToEigen(ft_sensor_kdl.p, p2_); // "surface piece end-effector"
 
   // updateSurfaceTangent();

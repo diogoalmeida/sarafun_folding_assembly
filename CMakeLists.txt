@@ -16,6 +16,7 @@ find_package(
 	tf_conversions
 	tf
 	abb_irb14000_support
+        sarafun_msgs
   #Eigen REQUIRED
 )
 

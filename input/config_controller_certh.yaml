@@ -1,4 +1,3 @@
-
 # Configuration file for the folding assembly controller
 folding_controller:
   saturation:
@@ -15,5 +14,5 @@ folding_node:
   yumi_state_topic: /egmri_feedback_topic
   yumi_command_topic: /egmri_commanded_topic
   arm: left
-  left_tooltip_name: left_gripper_base
-  right_tooltip_name: right_gripper_base
+  left_tooltip_name: left_hand_base #left_gripper_base
+  right_tooltip_name: right_hand_base #right_gripper_base
