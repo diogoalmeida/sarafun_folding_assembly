@@ -263,6 +263,13 @@ public:
       if(action_server_.isPreemptRequested() || !ros::ok())
       {
         ROS_WARN("%s was preempted!", action_name_.c_str());
+
+        for (int i = 0; i < commanded_joint_velocities.columns(); i++)
+        {
+            commanded_joint_velocities(i) = 0;
+        }
+
+        publishJointState(commanded_joint_velocities);
         result_.elapsed_time = (ros::Time::now() - begin_time).toSec();
         action_server_.setPreempted(result_);
         success = false;
