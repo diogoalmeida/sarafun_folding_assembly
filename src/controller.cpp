@@ -47,7 +47,13 @@ void foldingController::control(const double &vd, const double &wd, const double
   fRef_ = contact_force;
 
   // Need to be able to get surface tangent and normal. These are defined w.r.t the sensor frame
-  tf_listener_.lookupTransform(ft_sensor_frame_name_, base_frame_, ros::Time(0), ft_sensor_transform);
+  try{
+    tf_listener_.lookupTransform(ft_sensor_frame_name_, base_frame_, ros::Time(0), ft_sensor_transform);
+  }
+  catch (tf::TransformException ex){
+    ROS_ERROR("Transform exception when trying to get the sensor frame: %s", ex.what());
+    ros::shutdown();
+  }
   tf::transformTFToKDL(ft_sensor_transform, ft_sensor_frame_);
   tf::vectorKDLToEigen(ft_sensor_frame_.M.UnitX(), surfaceTangent_);
   tf::vectorKDLToEigen(ft_sensor_frame_.M.UnitZ(), surfaceNormal_);
