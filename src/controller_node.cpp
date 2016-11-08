@@ -262,7 +262,7 @@ public:
     Eigen::Vector3d v_out, w_out;
     Eigen::MatrixXd twist_eig(6, 1);
     Eigen::Matrix<double, 6, 1>  measured_twist_eig;
-    double vd, wd, theta;
+    double vd, wd, theta, theta_error;
     Eigen::Vector3d contact_point, p1_eig;
     KDL::JntArray commanded_joint_velocities;
     KDL::JntArrayVel joint_velocities;
@@ -309,7 +309,7 @@ public:
       begin_loop_time = ros::Time::now();
 
       twist_eig << v_out, w_out;
-      controller_.getEstimates(contact_point, theta, contact_point_frame);
+      controller_.getEstimates(contact_point, theta, theta_error, contact_point_frame);
       tf::twistEigenToMsg(twist_eig, output_twist);
       tf::vectorEigenToMsg(contact_point, output_contact_point);
       tf::twistEigenToKDL (twist_eig, input_twist);
@@ -317,6 +317,7 @@ public:
       feedback_.commanded_velocities = output_twist;
       feedback_.contact_point_estimate = output_contact_point;
       feedback_.angle_estimate = theta;
+      feedback_.error_estimate = theta_error;
       feedback_.elapsed_time = (ros::Time::now() - begin_time).toSec();
       action_server_.publishFeedback(feedback_);
       tf::poseKDLToTF(p1, p1_tf_);

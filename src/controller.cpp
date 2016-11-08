@@ -42,7 +42,6 @@ void foldingController::control(const double &vd, const double &wd, const double
   tf::StampedTransform ft_sensor_transform;
   Eigen::Matrix3d S;
   Eigen::Vector3d rotationAxis, omegaD, velD;
-  double orientation_error;
 
   dt_ = d_t;
   fRef_ = contact_force;
@@ -55,7 +54,7 @@ void foldingController::control(const double &vd, const double &wd, const double
     ROS_ERROR("Transform exception when trying to get the sensor frame: %s", ex.what());
     ros::shutdown();
   }
-  
+
   tf::transformTFToKDL(ft_sensor_transform, ft_sensor_frame_);
   tf::vectorKDLToEigen(ft_sensor_frame_.M.UnitX(), surfaceTangent_);
   tf::vectorKDLToEigen(ft_sensor_frame_.M.UnitZ(), surfaceNormal_);
@@ -63,11 +62,11 @@ void foldingController::control(const double &vd, const double &wd, const double
 
   updateContactPoint();
   updateTheta();
-  orientation_error = final_angle - thetaC_;
+  orientation_error_ = final_angle - thetaC_;
 
   rotationAxis = surfaceTangent_.cross(surfaceNormal_);
 
-  omegaD = wd*saturateAngle(orientation_error)*rotationAxis;
+  omegaD = wd*saturateAngle(orientation_error_)*rotationAxis;
   velD = vd*surfaceTangent_;
 
   // HACK: Due to calibration mismatches between the measured sensor frame and
@@ -122,11 +121,12 @@ double foldingController::saturateAngle(double error)
 /*
   Gives the current contact point and angle with surface estimates
 */
-void foldingController::getEstimates(Eigen::Vector3d &pc, double &thetac, KDL::Frame &pc_frame)
+void foldingController::getEstimates(Eigen::Vector3d &pc, double &thetac, double &theta_error, KDL::Frame &pc_frame)
 {
   pc = pc_;
   thetac = thetaC_;
   pc_frame = pc_frame_;
+  theta_error = orientation_error_;
 }
 
 /* Computes the velocity of the end-effector along the surface normal,

@@ -22,4 +22,5 @@ float64 elapsed_time
 geometry_msgs/Twist commanded_velocities # This is the output to the robot eef
 geometry_msgs/Vector3 contact_point_estimate
 float64 angle_estimate
+float64 error_estimate
 float64 elapsed_time
