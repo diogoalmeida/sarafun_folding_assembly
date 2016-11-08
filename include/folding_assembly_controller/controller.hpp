@@ -55,13 +55,13 @@ class foldingController
 
     tf::TransformListener tf_listener_;
 
-    std::string wrench_topic_name_, ft_sensor_frame_, base_frame_;
+    std::string wrench_topic_name_, ft_sensor_frame_name_, base_frame_;
 
     estimation estimation_type_;
     force_controller force_control_type_;
 
     KFEstimator1 estimator_;
-    KDL::Frame eef_frame_, pc_frame_;
+    KDL::Frame eef_frame_, pc_frame_, ft_sensor_frame_;
 
     ros::NodeHandle n_;
     ros::Publisher monitorPub_;

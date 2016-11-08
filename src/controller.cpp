@@ -40,21 +40,26 @@ Eigen::Matrix3d foldingController::computeSkewSymmetric(Eigen::Vector3d v)
 void foldingController::control(const double &vd, const double &wd, const double &contact_force, Eigen::Vector3d &vOut, Eigen::Vector3d &wOut, const double d_t)
 {
   tf::StampedTransform ft_sensor_transform;
-  KDL::Frame ft_sensor_kdl;
   Eigen::Matrix3d S;
-  Eigen::Vector3d rotationAxis, omegaD, velD;
+  Eigen::Vector3d rotationAxis, omegaD, velD, offset;
 
   dt_ = d_t;
   fRef_ = contact_force;
 
   // Need to be able to get surface tangent and normal
-  // surfaceTangent_ << 0, 1, 0;
-  // surfaceNormal_ << 0, 0, 1;
-  tf_listener_.lookupTransform(ft_sensor_frame_, base_frame_, ros::Time(0), ft_sensor_transform);
-  tf::transformTFToKDL(ft_sensor_transform, ft_sensor_kdl);
-  tf::vectorKDLToEigen(ft_sensor_kdl.M.UnitY(), surfaceTangent_);
-  tf::vectorKDLToEigen(ft_sensor_kdl.M.UnitZ(), surfaceNormal_);
-  tf::vectorKDLToEigen(ft_sensor_kdl.p, p2_); // "surface piece end-effector"
+  //surfaceTangent_ << 0, 1, 0;
+  //surfaceNormal_ << 0, 0, 1;
+  // std::cout <<"Sensor frame: "<< ft_sensor_frame_name_<< " Base frame: "<< base_frame_<<std::endl;
+  tf_listener_.lookupTransform(ft_sensor_frame_name_, base_frame_, ros::Time(0), ft_sensor_transform);
+  tf::transformTFToKDL(ft_sensor_transform, ft_sensor_frame_);
+  //  tf::vectorKDLToEigen(ft_sensor_frame_.M.UnitY(), surfaceTangent_);
+  //  tf::vectorKDLToEigen(ft_sensor_frame_.M.UnitZ(), surfaceNormal_);
+
+  tf::vectorKDLToEigen(ft_sensor_frame_.M.UnitX(), surfaceTangent_);
+  tf::vectorKDLToEigen(ft_sensor_frame_.M.UnitZ(), surfaceNormal_);
+
+
+  tf::vectorKDLToEigen(ft_sensor_frame_.p, p2_); // "surface piece end-effector"
 
   // updateSurfaceTangent();
   // updateSurfaceNormal();
@@ -66,6 +71,11 @@ void foldingController::control(const double &vd, const double &wd, const double
   velD = vd*surfaceTangent_;
 
   updateContactPoint();
+
+  // DIRTY HACK
+  offset << -0.003, -0.031, -0.022;
+  pc_ = pc_ + offset;
+  // END OF DIRTY HACK
 
   w1_ = omegaD;
 
@@ -155,23 +165,35 @@ void foldingController::updateTheta()
 */
 void foldingController::updateContactPoint()
 {
+  Eigen::Vector3d pc_temp;
+  KDL::Vector pc_kdl;
   switch(estimation_type_)
   {
     case NO_ESTIMATION:
       // code for having a pre-determined contact point
       {
         KDL::Vector translational_direction = eef_frame_.M.UnitZ();
-        KDL::Vector pc_kdl = eef_frame_.p + known_pc_distance_*translational_direction;
+        pc_kdl = eef_frame_.p + known_pc_distance_*translational_direction;
         pc_frame_.M = eef_frame_.M;
         pc_frame_.p = pc_kdl;
         tf::vectorKDLToEigen(pc_kdl, pc_);
       }
       break;
     case DIRECT_COMPUTATION:
-      pc_ = -t2_(1)/f2_(2)*surfaceNormal_;
+      pc_temp = -t2_(1)/f2_(2)*surfaceNormal_; // This is in the sensor frame
+      tf::vectorEigenToKDL(pc_temp, pc_kdl);
+      pc_kdl = ft_sensor_frame_.Inverse()*pc_kdl;
+      pc_frame_.p = pc_kdl;
+      pc_frame_.M = eef_frame_.M;
+      tf::vectorKDLToEigen(pc_kdl, pc_);
       break;
     case KALMAN_FILTER:
-      pc_ = estimator_.estimate(measured_v1_, measured_w1_, f2_, t2_, p1_, p2_, dt_);
+      pc_temp = estimator_.estimate(measured_v1_, measured_w1_, f2_, t2_, p1_, p2_, dt_); // This is in the sensor frame
+      tf::vectorEigenToKDL(pc_temp, pc_kdl);
+      pc_kdl = ft_sensor_frame_.Inverse()*pc_kdl;
+      pc_frame_.p = pc_kdl;
+      pc_frame_.M = eef_frame_.M; // TODO: Make function of computed thetaC_
+      tf::vectorKDLToEigen(pc_kdl, pc_);
       break;
   }
 }
@@ -217,10 +239,10 @@ bool foldingController::getParams()
     base_frame_ = "/base_frame";
   }
 
-  if(!n_.getParam("/folding_controller/ft_frame", ft_sensor_frame_))
+  if(!n_.getParam("/folding_controller/ft_frame", ft_sensor_frame_name_))
   {
     ROS_WARN("Sensor frame name not given! Will set to /ft (/folding_controller/ft_frame)");
-    ft_sensor_frame_ = "/ft";
+    ft_sensor_frame_name_ = "/ft";
   }
 }
 

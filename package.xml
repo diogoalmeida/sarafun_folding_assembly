@@ -33,4 +33,6 @@
   <run_depend>std_msgs</run_depend>
   <run_depend>kdl_parser</run_depend>
   <build_depend>kdl_parser</build_depend>
+  <build_depend>sarafun_msgs</build_depend>
+  <run_depend>sarafun_msgs</run_depend>
 </package>
