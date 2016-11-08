@@ -41,28 +41,19 @@ void foldingController::control(const double &vd, const double &wd, const double
 {
   tf::StampedTransform ft_sensor_transform;
   Eigen::Matrix3d S;
-  Eigen::Vector3d rotationAxis, omegaD, velD, offset;
+  Eigen::Vector3d rotationAxis, omegaD, velD;
 
   dt_ = d_t;
   fRef_ = contact_force;
 
-  // Need to be able to get surface tangent and normal
-  //surfaceTangent_ << 0, 1, 0;
-  //surfaceNormal_ << 0, 0, 1;
-  // std::cout <<"Sensor frame: "<< ft_sensor_frame_name_<< " Base frame: "<< base_frame_<<std::endl;
+  // Need to be able to get surface tangent and normal. These are defined w.r.t the sensor frame
   tf_listener_.lookupTransform(ft_sensor_frame_name_, base_frame_, ros::Time(0), ft_sensor_transform);
   tf::transformTFToKDL(ft_sensor_transform, ft_sensor_frame_);
-  //  tf::vectorKDLToEigen(ft_sensor_frame_.M.UnitY(), surfaceTangent_);
-  //  tf::vectorKDLToEigen(ft_sensor_frame_.M.UnitZ(), surfaceNormal_);
-
   tf::vectorKDLToEigen(ft_sensor_frame_.M.UnitX(), surfaceTangent_);
   tf::vectorKDLToEigen(ft_sensor_frame_.M.UnitZ(), surfaceNormal_);
-
-
   tf::vectorKDLToEigen(ft_sensor_frame_.p, p2_); // "surface piece end-effector"
 
-  // updateSurfaceTangent();
-  // updateSurfaceNormal();
+  updateContactPoint();
   updateTheta();
 
   rotationAxis = surfaceTangent_.cross(surfaceNormal_);
@@ -70,12 +61,11 @@ void foldingController::control(const double &vd, const double &wd, const double
   omegaD = wd*rotationAxis;
   velD = vd*surfaceTangent_;
 
-  updateContactPoint();
-
-  // DIRTY HACK
-  offset << -0.003, -0.031, -0.022;
-  pc_ = pc_ + offset;
-  // END OF DIRTY HACK
+  // HACK: Due to calibration mismatches between the measured sensor frame and
+  //       the actual one, the ft measurements might not be exactly correct.
+  //       We can measure the offset in the world frame and add it to the contact
+  //       point estimate
+  pc_ = pc_ + ft_sensor_measured_offset_;
 
   w1_ = omegaD;
 
@@ -243,6 +233,17 @@ bool foldingController::getParams()
   {
     ROS_WARN("Sensor frame name not given! Will set to /ft (/folding_controller/ft_frame)");
     ft_sensor_frame_name_ = "/ft";
+  }
+
+  std::vector<double> sensor_offset;
+  if(!n_.getParam("/folding_controller/ft_sensor_offset", sensor_offset) || sensor_offset.size() != 3)
+  {
+    ROS_WARN("No sensor offset defined! Will use zero (/folding_controller/ft_sensor_offset)");
+    ft_sensor_measured_offset_ << 0, 0, 0;
+  }
+  else
+  {
+    ft_sensor_measured_offset_ << sensor_offset[0], sensor_offset[1], sensor_offset[2];
   }
 }
 

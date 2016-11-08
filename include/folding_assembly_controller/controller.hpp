@@ -48,7 +48,8 @@ class foldingController
                     w1_, vref_, wref_,
                     vf_, realPc_, f1_,
                     f2_, t1_, t2_,
-                    measured_v1_, measured_w1_;
+                    measured_v1_, measured_w1_,
+                    ft_sensor_measured_offset_;
     double saturationV_, saturationW_, dt_;
     double thetaC_, fRef_, kf_;
     double known_pc_distance_;

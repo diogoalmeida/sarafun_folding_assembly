@@ -8,7 +8,7 @@
   <arg name="model" default="$(find abb_irb14000_support)/urdf/irb14000.xacro" />
   <param name="robot_description" command="$(find xacro)/xacro.py $(arg model)" />
 
-  <arg name="estimator_parameters" default="$(find folding_assembly_controller)/input/config_estimator_certh.yaml"/>
+  <arg name="estimator_parameters" default="$(find folding_assembly_controller)/input/config_estimator.yaml"/>
   <arg name="controller_parameters" default="$(find folding_assembly_controller)/input/config_controller.yaml"/>
   <rosparam command="load" file="$(arg estimator_parameters)"/>
   <rosparam command="load" file="$(arg controller_parameters)"/>

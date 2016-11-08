@@ -17,3 +17,4 @@ folding_node:
   arm: left
   left_tooltip_name: left_gripper_base
   right_tooltip_name: right_gripper_base
+  ft_sensor_offset: [-0.003. -0.031, -0.022]
