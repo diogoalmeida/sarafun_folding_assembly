@@ -46,7 +46,16 @@ protected:
   KDL::Tree tree_;
   urdf::Model model_;
 
-  double control_frequency_, desired_contact_force_, eps_, desired_final_angle_, success_error_;
+  double control_frequency_, desired_contact_force_, eps_, desired_final_angle_, success_error_, retreat_distance_;
+
+  /*
+    Open Yumi's gripper
+  */
+  void openGripper()
+  {
+    // TODO: Implement
+    return;
+  }
 
   /*
     Runs the required code to preempt the controller
@@ -142,6 +151,12 @@ protected:
     if(!nh_.getParam("/folding_node/success_error", success_error_))
     {
       ROS_ERROR("%s could not retrive the breaking error (/folding_node/success_error)!", action_name_.c_str());
+      return false;
+    }
+
+    if(!nh_.getParam("/folding_node/retreat_distance", retreat_distance_))
+    {
+      ROS_ERROR("%s could not retrive the retreat distance (/folding_node/retreat_distance)!", action_name_.c_str());
       return false;
     }
 
@@ -370,6 +385,26 @@ public:
     // Need to define what is a successful folding execution
     if(success)
     {
+      // HACK: The controller node will handle retreating the end-effector
+      fkpos_->JntToCart(joint_positions_, p1);
+      tf::vectorKDLToEigen(p1.p, p1_eig);
+      Eigen::Vector3d retreat_direction = p1_eig - contact_point;
+      Eigen::Vector3d final_position = p1_eig + retreat_distance_*retreat_direction;
+      retreat_direction = retreat_direction/retreat_direction.norm();
+      w_out << 0, 0, 0;
+      openGripper();
+      sleep(1.0);
+
+      while(!done)
+      {
+        v_out = final_position - p1_eig;
+        twist_eig << v_out, w_out;
+        tf::twistEigenToKDL (twist_eig, input_twist);
+        ikvel_->CartToJnt(joint_positions_, input_twist, commanded_joint_velocities);
+        publishJointState(commanded_joint_velocities);
+        rate.sleep();
+      }
+
       handleSuccess(begin_time);
     }
   }
@@ -394,14 +429,12 @@ public:
     {
       joint_command.name.push_back(prefix_ + std::string("joint_") + std::to_string(i+1));
       joint_command.position.push_back(0.0);
-      // joint_command.velocity.push_back(joint_velocities.qdot(i));
       joint_command.velocity.push_back(joint_velocities(i));
       joint_command.effort.push_back(0.0);
     }
 
     for(int i=0; i < chain_.getNrOfJoints(); i++)
     {
-    //joint_command.name.push_back("hack");
       joint_command.name.push_back(other_arm + std::string("joint_") + std::to_string(i+1));
       joint_command.velocity.push_back(0.0);
       joint_command.position.push_back(0.0);
