@@ -23,6 +23,8 @@ folding_node:
   success_error: 0.01 # When the part gets within **success_error** radians from the desired final orientation, the node will succeed
   retreat_distance: 0.05 # meters to retreat the eef after succeeding in one assembly
   retreat_gain: 0.1 # proportional gain for the "position controller"
+  gripper_command_topic: /abb_external_communication_node/rws_topic
+  gripper_sleep_time: 3
 
 # GOOD MESSAGE
 #

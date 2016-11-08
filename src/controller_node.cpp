@@ -5,6 +5,7 @@
 #include <eigen_conversions/eigen_msg.h>
 #include <eigen_conversions/eigen_kdl.h>
 #include <folding_assembly_controller/FoldingAssemblyAction.h>
+#include <abb_external_communication/RWS.h>
 #include <sensor_msgs/JointState.h>
 #include <tf/transform_broadcaster.h>
 #include <tf_conversions/tf_kdl.h>
@@ -25,13 +26,13 @@ protected:
   ros::NodeHandle nh_;
   actionlib::SimpleActionServer<folding_assembly_controller::FoldingAssemblyAction> action_server_;
   std::string action_name_, rod_arm_, prefix_;
-  std::string yumi_state_topic_, yumi_command_topic_;
+  std::string yumi_state_topic_, yumi_command_topic_, gripper_command_topic_;
   std::string left_tooltip_name_, right_tooltip_name_;
 
   folding_assembly_controller::FoldingAssemblyFeedback feedback_;
   folding_assembly_controller::FoldingAssemblyResult result_;
 
-  ros::Publisher joint_publisher_;
+  ros::Publisher joint_publisher_, gripper_publisher_;
   ros::Subscriber joint_subscriber_;
 
   // TF declarations (for visualisation purposes)
@@ -49,14 +50,17 @@ protected:
   double control_frequency_, desired_contact_force_, eps_, desired_final_angle_, success_error_;
 
   // For the retreat controller
-  double retreat_distance_, retreat_gain_;
+  double retreat_distance_, retreat_gain_, gripper_sleep_time_;
 
   /*
     Open Yumi's gripper
   */
   void openGripper()
   {
-    // TODO: Implement
+    abb_external_communication::RWS msg;
+
+    msg.type = msg.TYPE_OPEN_LEFT_GRIPPER_TO_POSITION;
+    gripper_publisher_.publish(msg);
     return;
   }
 
@@ -139,6 +143,18 @@ protected:
       return false;
     }
 
+    if(!nh_.getParam("/folding_node/gripper_command_topic", gripper_command_topic_))
+    {
+      ROS_ERROR("%s could not retrive yumi's gripper topic name (/folding_node/gripper_command_topic)!", action_name_.c_str());
+      return false;
+    }
+
+    if(!nh_.getParam("/folding_node/gripper_sleep_time", gripper_sleep_time_))
+    {
+      ROS_ERROR("%s could not retrive yumi's gripper sleep time (/folding_node/gripper_sleep_time)!", action_name_.c_str());
+      return false;
+    }
+
     if(!nh_.getParam("/folding_node/right_tooltip_name", right_tooltip_name_))
     {
       ROS_ERROR("%s could not retrive yumi's right_tooltip_name (/folding_node/right_tooltip_name)!", action_name_.c_str());
@@ -210,6 +226,7 @@ public:
     fkpos_ = new KDL::ChainFkSolverPos_recursive(chain_);
 
     joint_publisher_ = nh_.advertise<sensor_msgs::JointState>(yumi_command_topic_, 1);
+    gripper_publisher_ = nh_.advertise<abb_external_communication::RWS>(gripper_command_topic_, 1);
     joint_subscriber_ = nh_.subscribe(yumi_state_topic_, 1, &FoldingAction::jointStateCallback, this);
 
     ROS_INFO("%s is starting the action server...", action_name_.c_str());
@@ -402,10 +419,12 @@ public:
       retreat_direction = retreat_direction/retreat_direction.norm();
       w_out << 0, 0, 0;
       openGripper();
-      sleep(1.0);
+      sleep(gripper_sleep_time_);
 
-      while(!done)
+      while(!success)
       {
+        success = handlePreemption(begin_time);
+
         v_out = retreat_gain_*(final_position - p1_eig);
         twist_eig << v_out, w_out;
         tf::twistEigenToKDL (twist_eig, input_twist);
