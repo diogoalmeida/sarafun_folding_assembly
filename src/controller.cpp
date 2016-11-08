@@ -54,6 +54,7 @@ void foldingController::control(const double &vd, const double &wd, const double
     ROS_ERROR("Transform exception when trying to get the sensor frame: %s", ex.what());
     ros::shutdown();
   }
+  
   tf::transformTFToKDL(ft_sensor_transform, ft_sensor_frame_);
   tf::vectorKDLToEigen(ft_sensor_frame_.M.UnitX(), surfaceTangent_);
   tf::vectorKDLToEigen(ft_sensor_frame_.M.UnitZ(), surfaceNormal_);
@@ -241,15 +242,23 @@ bool foldingController::getParams()
     ft_sensor_frame_name_ = "/ft";
   }
 
-  std::vector<double> sensor_offset;
-  if(!n_.getParam("/folding_controller/ft_sensor_offset", sensor_offset) || sensor_offset.size() != 3)
+  std::vector<double> sensor_offset(3,0.0);
+  if(!n_.getParam("/folding_controller/ft_sensor_offset", sensor_offset))
   {
     ROS_WARN("No sensor offset defined! Will use zero (/folding_controller/ft_sensor_offset)");
     ft_sensor_measured_offset_ << 0, 0, 0;
   }
   else
   {
-    ft_sensor_measured_offset_ << sensor_offset[0], sensor_offset[1], sensor_offset[2];
+    if(sensor_offset.size() != 3)
+    {
+      ROS_WARN("Sensor offset has an incorrect dimension (should be 3)");
+      ft_sensor_measured_offset_ << 0, 0, 0;
+    }
+    else
+    {
+      ft_sensor_measured_offset_ << sensor_offset[0], sensor_offset[1], sensor_offset[2];
+    }
   }
 }
 

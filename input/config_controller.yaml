@@ -6,9 +6,10 @@ folding_controller:
     w: 0.1
   gains:
     kf: 0.001
-  known_pc_distance: 0.197 #0.16 # used for testing the controller with no estimation
+  known_pc_distance: 0.20 #0.16 # used for testing the controller with no estimation
   base_frame: /base_link # name of the world frame (TF)
   ft_frame: /IRE0A004 # name of the force torque sensor frame (TF)
+  ft_sensor_offset: [0.01, -0.043, -0.019]
 
 folding_node:
   frequency: 100
@@ -17,4 +18,3 @@ folding_node:
   arm: left
   left_tooltip_name: left_gripper_base
   right_tooltip_name: right_gripper_base
-  ft_sensor_offset: [-0.003. -0.031, -0.022]
