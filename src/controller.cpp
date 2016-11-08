@@ -115,7 +115,7 @@ double foldingController::saturateAngle(double error)
     return 1;
   }
 
-  return error/breaking_error_;
+  return std::abs(error/breaking_error_);
 }
 
 /*

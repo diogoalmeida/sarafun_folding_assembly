@@ -46,7 +46,7 @@ protected:
   KDL::Tree tree_;
   urdf::Model model_;
 
-  double control_frequency_, desired_contact_force_, eps_, desired_final_angle_;
+  double control_frequency_, desired_contact_force_, eps_, desired_final_angle_, success_error_;
 
   /*
     Runs the required code to preempt the controller
@@ -72,6 +72,26 @@ protected:
     }
 
     return true;
+  }
+
+  /*
+    Runs the code for stopping the controller in the event of a success
+  */
+  bool handleSuccess(ros::Time begin_time)
+  {
+    KDL::JntArray commanded_joint_velocities;
+    commanded_joint_velocities.resize(chain_.getNrOfJoints());
+
+    ROS_INFO("%s succeeded!", action_name_.c_str());
+
+    for (int i = 0; i < chain_.getNrOfJoints(); i++)
+    {
+        commanded_joint_velocities(i) = 0.0;
+    }
+
+    publishJointState(commanded_joint_velocities);
+    result_.elapsed_time = (ros::Time::now() - begin_time).toSec();
+    action_server_.setSucceeded(result_);
   }
 
   /* Load the node parameters */
@@ -116,6 +136,12 @@ protected:
     if(!nh_.getParam("/folding_node/left_tooltip_name", left_tooltip_name_))
     {
       ROS_ERROR("%s could not retrive yumi's left_tooltip_name (/folding_node/left_tooltip_name)!", action_name_.c_str());
+      return false;
+    }
+
+    if(!nh_.getParam("/folding_node/success_error", success_error_))
+    {
+      ROS_ERROR("%s could not retrive the breaking error (/folding_node/success_error)!", action_name_.c_str());
       return false;
     }
 
@@ -331,6 +357,12 @@ public:
       ikvel_->CartToJnt(joint_positions_, input_twist, commanded_joint_velocities);
       publishJointState(commanded_joint_velocities);
 
+      if (std::abs(theta_error) < success_error_)
+      {
+        success = true;
+        break;
+      }
+
       // Output joint velocities to yumi
       rate.sleep();
     }
@@ -338,9 +370,7 @@ public:
     // Need to define what is a successful folding execution
     if(success)
     {
-      result_.elapsed_time = (ros::Time::now() - begin_time).toSec();
-      ROS_INFO("%s has succeeded!", action_name_.c_str());
-      action_server_.setSucceeded(result_);
+      handleSuccess(begin_time);
     }
   }
 
