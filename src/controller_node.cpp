@@ -50,7 +50,7 @@ protected:
   double control_frequency_, desired_contact_force_, eps_, desired_final_angle_, success_error_;
 
   // For the retreat controller
-  double retreat_distance_, retreat_gain_, gripper_sleep_time_;
+  double retreat_distance_, retreat_gain_, gripper_sleep_time_, retreat_error_threshold_;
 
   /*
     Open Yumi's gripper
@@ -176,6 +176,12 @@ protected:
     if(!nh_.getParam("/folding_node/retreat_distance", retreat_distance_))
     {
       ROS_ERROR("%s could not retrive the retreat distance (/folding_node/retreat_distance)!", action_name_.c_str());
+      return false;
+    }
+
+    if(!nh_.getParam("/folding_node/retreat_error_threshold", retreat_error_threshold_))
+    {
+      ROS_ERROR("%s could not retrive the retreat error threshold (/folding_node/retreat_error_threshold)!", action_name_.c_str());
       return false;
     }
 
@@ -416,20 +422,34 @@ public:
       tf::vectorKDLToEigen(p1.p, p1_eig);
       Eigen::Vector3d retreat_direction = p1_eig - contact_point;
       Eigen::Vector3d final_position = p1_eig + retreat_distance_*retreat_direction;
+      Eigen::Vector3d retreat_error;
       retreat_direction = retreat_direction/retreat_direction.norm();
       w_out << 0, 0, 0;
       openGripper();
       sleep(gripper_sleep_time_);
 
+      success = false;
       while(!success)
       {
-        success = handlePreemption(begin_time);
+        if(handlePreemption(begin_time))
+        {
+          break;
+        }
 
-        v_out = retreat_gain_*(final_position - p1_eig);
-        twist_eig << v_out, w_out;
-        tf::twistEigenToKDL (twist_eig, input_twist);
-        ikvel_->CartToJnt(joint_positions_, input_twist, commanded_joint_velocities);
-        publishJointState(commanded_joint_velocities);
+        retreat_error = final_position - p1_eig;
+
+        if (retreat_error.norm() < retreat_error_threshold_)
+        {
+          success = true;
+        }
+        else
+        {
+          v_out = retreat_gain_*retreat_error;
+          twist_eig << v_out, w_out;
+          tf::twistEigenToKDL (twist_eig, input_twist);
+          ikvel_->CartToJnt(joint_positions_, input_twist, commanded_joint_velocities);
+          publishJointState(commanded_joint_velocities);
+        }
         rate.sleep();
       }
 
