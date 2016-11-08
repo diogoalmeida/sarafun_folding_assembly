@@ -40,7 +40,6 @@ Eigen::Matrix3d foldingController::computeSkewSymmetric(Eigen::Vector3d v)
 void foldingController::control(const double &vd, const double &wd, const double &contact_force, const double &final_angle, Eigen::Vector3d &vOut, Eigen::Vector3d &wOut, const double d_t)
 {
   tf::StampedTransform ft_sensor_transform;
-  KDL::Frame ft_sensor_kdl;
   Eigen::Matrix3d S;
   Eigen::Vector3d rotationAxis, omegaD, velD;
   double orientation_error;
@@ -48,17 +47,21 @@ void foldingController::control(const double &vd, const double &wd, const double
   dt_ = d_t;
   fRef_ = contact_force;
 
-  // Need to be able to get surface tangent and normal
-  // surfaceTangent_ << 0, 1, 0;
-  // surfaceNormal_ << 0, 0, 1;
-  tf_listener_.lookupTransform(ft_sensor_frame_, base_frame_, ros::Time(0), ft_sensor_transform);
-  tf::transformTFToKDL(ft_sensor_transform, ft_sensor_kdl);
-  tf::vectorKDLToEigen(ft_sensor_kdl.M.UnitY(), surfaceTangent_);
-  tf::vectorKDLToEigen(ft_sensor_kdl.M.UnitZ(), surfaceNormal_);
-  tf::vectorKDLToEigen(ft_sensor_kdl.p, p2_); // "surface piece end-effector"
+  // Need to be able to get surface tangent and normal. These are defined w.r.t the sensor frame
+  try{
+    tf_listener_.lookupTransform(ft_sensor_frame_name_, base_frame_, ros::Time(0), ft_sensor_transform);
+  }
+  catch (tf::TransformException ex){
+    ROS_ERROR("Transform exception when trying to get the sensor frame: %s", ex.what());
+    ros::shutdown();
+  }
+  
+  tf::transformTFToKDL(ft_sensor_transform, ft_sensor_frame_);
+  tf::vectorKDLToEigen(ft_sensor_frame_.M.UnitX(), surfaceTangent_);
+  tf::vectorKDLToEigen(ft_sensor_frame_.M.UnitZ(), surfaceNormal_);
+  tf::vectorKDLToEigen(ft_sensor_frame_.p, p2_); // "surface piece end-effector"
 
-  // updateSurfaceTangent();
-  // updateSurfaceNormal();
+  updateContactPoint();
   updateTheta();
   orientation_error = final_angle - thetaC_;
 
@@ -67,7 +70,11 @@ void foldingController::control(const double &vd, const double &wd, const double
   omegaD = wd*saturateAngle(orientation_error)*rotationAxis;
   velD = vd*surfaceTangent_;
 
-  updateContactPoint();
+  // HACK: Due to calibration mismatches between the measured sensor frame and
+  //       the actual one, the ft measurements might not be exactly correct.
+  //       We can measure the offset in the world frame and add it to the contact
+  //       point estimate
+  pc_ = pc_ + ft_sensor_measured_offset_;
 
   w1_ = omegaD;
 
@@ -175,23 +182,35 @@ void foldingController::updateTheta()
 */
 void foldingController::updateContactPoint()
 {
+  Eigen::Vector3d pc_temp;
+  KDL::Vector pc_kdl;
   switch(estimation_type_)
   {
     case NO_ESTIMATION:
       // code for having a pre-determined contact point
       {
         KDL::Vector translational_direction = eef_frame_.M.UnitZ();
-        KDL::Vector pc_kdl = eef_frame_.p + known_pc_distance_*translational_direction;
+        pc_kdl = eef_frame_.p + known_pc_distance_*translational_direction;
         pc_frame_.M = eef_frame_.M;
         pc_frame_.p = pc_kdl;
         tf::vectorKDLToEigen(pc_kdl, pc_);
       }
       break;
     case DIRECT_COMPUTATION:
-      pc_ = -t2_(1)/f2_(2)*surfaceNormal_;
+      pc_temp = -t2_(1)/f2_(2)*surfaceNormal_; // This is in the sensor frame
+      tf::vectorEigenToKDL(pc_temp, pc_kdl);
+      pc_kdl = ft_sensor_frame_.Inverse()*pc_kdl;
+      pc_frame_.p = pc_kdl;
+      pc_frame_.M = eef_frame_.M;
+      tf::vectorKDLToEigen(pc_kdl, pc_);
       break;
     case KALMAN_FILTER:
-      pc_ = estimator_.estimate(measured_v1_, measured_w1_, f2_, t2_, p1_, p2_, dt_);
+      pc_temp = estimator_.estimate(measured_v1_, measured_w1_, f2_, t2_, p1_, p2_, dt_); // This is in the sensor frame
+      tf::vectorEigenToKDL(pc_temp, pc_kdl);
+      pc_kdl = ft_sensor_frame_.Inverse()*pc_kdl;
+      pc_frame_.p = pc_kdl;
+      pc_frame_.M = eef_frame_.M; // TODO: Make function of computed thetaC_
+      tf::vectorKDLToEigen(pc_kdl, pc_);
       break;
   }
 }
@@ -237,10 +256,29 @@ bool foldingController::getParams()
     base_frame_ = "/base_frame";
   }
 
-  if(!n_.getParam("/folding_controller/ft_frame", ft_sensor_frame_))
+  if(!n_.getParam("/folding_controller/ft_frame", ft_sensor_frame_name_))
   {
     ROS_WARN("Sensor frame name not given! Will set to /ft (/folding_controller/ft_frame)");
-    ft_sensor_frame_ = "/ft";
+    ft_sensor_frame_name_ = "/ft";
+  }
+
+  std::vector<double> sensor_offset(3,0.0);
+  if(!n_.getParam("/folding_controller/ft_sensor_offset", sensor_offset))
+  {
+    ROS_WARN("No sensor offset defined! Will use zero (/folding_controller/ft_sensor_offset)");
+    ft_sensor_measured_offset_ << 0, 0, 0;
+  }
+  else
+  {
+    if(sensor_offset.size() != 3)
+    {
+      ROS_WARN("Sensor offset has an incorrect dimension (should be 3)");
+      ft_sensor_measured_offset_ << 0, 0, 0;
+    }
+    else
+    {
+      ft_sensor_measured_offset_ << sensor_offset[0], sensor_offset[1], sensor_offset[2];
+    }
   }
 
   if(!n_.getParam("/folding_controller/breaking_error", breaking_error_))

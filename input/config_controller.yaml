@@ -1,19 +1,21 @@
+
 # Configuration file for the folding assembly controller
 folding_controller:
   saturation:
     v: 0.1
     w: 0.1
-  gains:
-    kf: 0.005
-  known_pc_distance: 0.16 # used for testing the controller with no estimation
-  base_frame: /base_frame # name of the world frame (TF)
-  ft_frame: /ft # name of the force torque sensor frame (TF)
+    gains:
+      kf: 0.001
   breaking_error: 0.78539816339 # When the part gets within **breaking_error** radians from the desired final orientation, the controller will start slowing down
+  known_pc_distance: 0.20 #0.16 # used for testing the controller with no estimation
+  base_frame: /base_link # name of the world frame (TF)
+  ft_frame: /IRE0A004 # name of the force torque sensor frame (TF)
+  ft_sensor_offset: [0.01, -0.043, -0.019]
 
 folding_node:
   frequency: 100
   yumi_state_topic: /egmri_feedback_topic
   yumi_command_topic: /egmri_commanded_topic
-  arm: right
+  arm: left
   left_tooltip_name: left_gripper_base
   right_tooltip_name: right_gripper_base
