@@ -37,7 +37,7 @@ Eigen::Matrix3d foldingController::computeSkewSymmetric(Eigen::Vector3d v)
   return S;
 }
 
-void foldingController::control(const double &vd, const double &wd, const double &contact_force, Eigen::Vector3d &vOut, Eigen::Vector3d &wOut, const double d_t)
+void foldingController::control(const double &vd, const double &wd, const double &contact_force, const double &final_angle, Eigen::Vector3d &vOut, Eigen::Vector3d &wOut, const double d_t)
 {
   tf::StampedTransform ft_sensor_transform;
   Eigen::Matrix3d S;
@@ -54,6 +54,7 @@ void foldingController::control(const double &vd, const double &wd, const double
     ROS_ERROR("Transform exception when trying to get the sensor frame: %s", ex.what());
     ros::shutdown();
   }
+
   tf::transformTFToKDL(ft_sensor_transform, ft_sensor_frame_);
   tf::vectorKDLToEigen(ft_sensor_frame_.M.UnitX(), surfaceTangent_);
   tf::vectorKDLToEigen(ft_sensor_frame_.M.UnitZ(), surfaceNormal_);
@@ -61,10 +62,11 @@ void foldingController::control(const double &vd, const double &wd, const double
 
   updateContactPoint();
   updateTheta();
+  orientation_error_ = final_angle - thetaC_;
 
   rotationAxis = surfaceTangent_.cross(surfaceNormal_);
 
-  omegaD = wd*rotationAxis;
+  omegaD = wd*saturateAngle(orientation_error_)*rotationAxis;
   velD = vd*surfaceTangent_;
 
   // HACK: Due to calibration mismatches between the measured sensor frame and
@@ -99,13 +101,32 @@ void foldingController::control(const double &vd, const double &wd, const double
 }
 
 /*
+  Return x < 1 for |error| < breaking_error and 1 otherwise
+*/
+double foldingController::saturateAngle(double error)
+{
+  if (breaking_error_ == 0) // disabled
+  {
+    return 1;
+  }
+
+  if (std::abs(error) > breaking_error_)
+  {
+    return 1;
+  }
+
+  return std::abs(error/breaking_error_);
+}
+
+/*
   Gives the current contact point and angle with surface estimates
 */
-void foldingController::getEstimates(Eigen::Vector3d &pc, double &thetac, KDL::Frame &pc_frame)
+void foldingController::getEstimates(Eigen::Vector3d &pc, double &thetac, double &theta_error, KDL::Frame &pc_frame)
 {
   pc = pc_;
   thetac = thetaC_;
   pc_frame = pc_frame_;
+  theta_error = orientation_error_;
 }
 
 /* Computes the velocity of the end-effector along the surface normal,
@@ -241,15 +262,34 @@ bool foldingController::getParams()
     ft_sensor_frame_name_ = "/ft";
   }
 
-  std::vector<double> sensor_offset;
-  if(!n_.getParam("/folding_controller/ft_sensor_offset", sensor_offset) || sensor_offset.size() != 3)
+  std::vector<double> sensor_offset(3,0.0);
+  if(!n_.getParam("/folding_controller/ft_sensor_offset", sensor_offset))
   {
     ROS_WARN("No sensor offset defined! Will use zero (/folding_controller/ft_sensor_offset)");
     ft_sensor_measured_offset_ << 0, 0, 0;
   }
   else
   {
-    ft_sensor_measured_offset_ << sensor_offset[0], sensor_offset[1], sensor_offset[2];
+    if(sensor_offset.size() != 3)
+    {
+      ROS_WARN("Sensor offset has an incorrect dimension (should be 3)");
+      ft_sensor_measured_offset_ << 0, 0, 0;
+    }
+    else
+    {
+      ft_sensor_measured_offset_ << sensor_offset[0], sensor_offset[1], sensor_offset[2];
+    }
+  }
+
+  if(!n_.getParam("/folding_controller/breaking_error", breaking_error_))
+  {
+    ROS_WARN("Missing breaking error (/folding_controller/breaking_error)");
+    breaking_error_ = M_PI/8;
+  }
+
+  if(breaking_error_ == 0)
+  {
+    ROS_WARN("Breaking error set to 0! This will disable angular feedback");
   }
 }
 
