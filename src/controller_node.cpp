@@ -327,7 +327,7 @@ public:
   void executeCB(const folding_assembly_controller::FoldingAssemblyGoalConstPtr &goal)
   {
     ros::Rate rate(control_frequency_);
-    bool done = false, success = true;
+    bool done = false, success = false;
     ros::Time begin_time = ros::Time::now();
     ros::Time begin_loop_time = ros::Time::now();
     ros::Time current_time = ros::Time::now();
@@ -360,9 +360,9 @@ public:
 
     while(!done)
     {
-      success = handlePreemption(begin_time);
-      if(!success)
+      if(!handlePreemption(begin_time))
       {
+        success = false;
         break;
       }
 
@@ -399,8 +399,6 @@ public:
       tf_broadcaster.sendTransform(tf::StampedTransform(pc_tf_, ros::Time::now(), "base_link", "contact_point"));
 
       // Convert twist to joint velocities
-      // Need to get joint positions from yumi
-      // joint_position = ...?
       ikvel_->CartToJnt(joint_positions_, input_twist, commanded_joint_velocities);
       publishJointState(commanded_joint_velocities);
 
@@ -425,25 +423,30 @@ public:
       Eigen::Vector3d retreat_error;
       retreat_direction = retreat_direction/retreat_direction.norm();
       w_out << 0, 0, 0;
+      sleep(gripper_sleep_time_);
       openGripper();
       sleep(gripper_sleep_time_);
 
-      success = false;
-      while(!success)
+      while(true)
       {
-        if(handlePreemption(begin_time))
+        if(!handlePreemption(begin_time))
         {
           break;
         }
 
         retreat_error = final_position - p1_eig;
 
+        ROS_INFO("ERROR NORM: %.3f", retreat_error.norm());
+
         if (retreat_error.norm() < retreat_error_threshold_)
         {
-          success = true;
+          ROS_INFO("Retreat executed successfully!");
+          break;
         }
         else
         {
+          fkpos_->JntToCart(joint_positions_, p1);
+          tf::vectorKDLToEigen(p1.p, p1_eig);
           v_out = retreat_gain_*retreat_error;
           twist_eig << v_out, w_out;
           tf::twistEigenToKDL (twist_eig, input_twist);

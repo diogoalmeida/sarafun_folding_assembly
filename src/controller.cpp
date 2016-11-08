@@ -166,6 +166,9 @@ Eigen::Vector3d foldingController::computeForceControl()
 
   v_f = kf_ * force_error;
 
+  // ROS_INFO("VF: %.5f", v_f);
+  // ROS_INFO("forceDirection: %.5f, %.5f, %.5f", forceDirection(0), forceDirection(1), forceDirection(2));
+
   return v_f*forceDirection;
 }
 
