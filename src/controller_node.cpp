@@ -46,7 +46,10 @@ protected:
   KDL::Tree tree_;
   urdf::Model model_;
 
-  double control_frequency_, desired_contact_force_, eps_, desired_final_angle_, success_error_, retreat_distance_;
+  double control_frequency_, desired_contact_force_, eps_, desired_final_angle_, success_error_;
+
+  // For the retreat controller
+  double retreat_distance_, retreat_gain_;
 
   /*
     Open Yumi's gripper
@@ -157,6 +160,12 @@ protected:
     if(!nh_.getParam("/folding_node/retreat_distance", retreat_distance_))
     {
       ROS_ERROR("%s could not retrive the retreat distance (/folding_node/retreat_distance)!", action_name_.c_str());
+      return false;
+    }
+
+    if(!nh_.getParam("/folding_node/retreat_gain", retreat_gain_))
+    {
+      ROS_ERROR("%s could not retrive the retreat gain (/folding_node/retreat_gain)!", action_name_.c_str());
       return false;
     }
 
@@ -397,7 +406,7 @@ public:
 
       while(!done)
       {
-        v_out = final_position - p1_eig;
+        v_out = retreat_gain_*(final_position - p1_eig);
         twist_eig << v_out, w_out;
         tf::twistEigenToKDL (twist_eig, input_twist);
         ikvel_->CartToJnt(joint_positions_, input_twist, commanded_joint_velocities);

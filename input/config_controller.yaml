@@ -21,10 +21,11 @@ folding_node:
   left_tooltip_name: left_gripper_base
   right_tooltip_name: right_gripper_base
   success_error: 0.01 # When the part gets within **success_error** radians from the desired final orientation, the node will succeed
-
+  retreat_distance: 0.05 # meters to retreat the eef after succeeding in one assembly
+  retreat_gain: 0.1 # proportional gain for the "position controller"
 
 # GOOD MESSAGE
-# 
+#
 # desired_velocities:
 #   linear:
 #     x: 0.0
