@@ -5,8 +5,8 @@ folding_controller:
     v: 0.1
     w: 0.1
   gains:
-    kf: 0.005
-  known_pc_distance: 0.14 #0.16 # used for testing the controller with no estimation
+    kf: 0.001
+  known_pc_distance: 0.197 #0.16 # used for testing the controller with no estimation
   base_frame: /base_link # name of the world frame (TF)
   ft_frame: /IRE0A004 # name of the force torque sensor frame (TF)
 

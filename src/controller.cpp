@@ -41,7 +41,7 @@ void foldingController::control(const double &vd, const double &wd, const double
 {
   tf::StampedTransform ft_sensor_transform;
   Eigen::Matrix3d S;
-  Eigen::Vector3d rotationAxis, omegaD, velD;
+  Eigen::Vector3d rotationAxis, omegaD, velD, offset;
 
   dt_ = d_t;
   fRef_ = contact_force;
@@ -71,6 +71,11 @@ void foldingController::control(const double &vd, const double &wd, const double
   velD = vd*surfaceTangent_;
 
   updateContactPoint();
+
+  // DIRTY HACK
+  offset << -0.003, -0.031, -0.022;
+  pc_ = pc_ + offset;
+  // END OF DIRTY HACK
 
   w1_ = omegaD;
 
@@ -178,12 +183,16 @@ void foldingController::updateContactPoint()
       pc_temp = -t2_(1)/f2_(2)*surfaceNormal_; // This is in the sensor frame
       tf::vectorEigenToKDL(pc_temp, pc_kdl);
       pc_kdl = ft_sensor_frame_.Inverse()*pc_kdl;
+      pc_frame_.p = pc_kdl;
+      pc_frame_.M = eef_frame_.M;
       tf::vectorKDLToEigen(pc_kdl, pc_);
       break;
     case KALMAN_FILTER:
       pc_temp = estimator_.estimate(measured_v1_, measured_w1_, f2_, t2_, p1_, p2_, dt_); // This is in the sensor frame
       tf::vectorEigenToKDL(pc_temp, pc_kdl);
       pc_kdl = ft_sensor_frame_.Inverse()*pc_kdl;
+      pc_frame_.p = pc_kdl;
+      pc_frame_.M = eef_frame_.M; // TODO: Make function of computed thetaC_
       tf::vectorKDLToEigen(pc_kdl, pc_);
       break;
   }
