@@ -36,6 +36,7 @@ class KFEstimatorBase : public estimatorInterface
     virtual Eigen::Vector3d estimate(const Eigen::Vector3d v1, const Eigen::Vector3d w1,
       const Eigen::Vector3d force, const Eigen::Vector3d torque,
       const Eigen::Vector3d p1, const Eigen::Vector3d p2, const double dt)=0;
+    void reset(const Eigen::Vector3d mu_init);
   protected:
     virtual void predict(Eigen::Vector3d &mu_bar, Eigen::Matrix3d &sigma_bar,
       const Eigen::Vector3d v1, const Eigen::Vector3d w1,

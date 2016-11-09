@@ -82,6 +82,15 @@ bool KFEstimatorBase::initialize(const Eigen::Vector3d mu_init)
   return true;
 }
 
+/*
+  Resets the estimator to the given guess
+*/
+void KFEstimatorBase::reset(const Eigen::Vector3d mu_init)
+{
+  mu = mu_init;
+  nu = Eigen::Vector3d::Zero();
+}
+
 bool KFEstimatorBase::parseMatrixData(Eigen::Matrix3d &M, const std::string configName)
 {
   int rows = 0, columns = 0;

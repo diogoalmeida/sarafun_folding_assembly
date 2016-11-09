@@ -101,6 +101,14 @@ void foldingController::control(const double &vd, const double &wd, const double
 }
 
 /*
+  Sets the current contact point estimate to the initial guess
+*/
+void foldingController::resetEstimate()
+{
+  estimator_.reset(p1_);
+}
+
+/*
   Return x < 1 for |error| < breaking_error and 1 otherwise
 */
 double foldingController::saturateAngle(double error)

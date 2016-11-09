@@ -357,6 +357,7 @@ public:
 
     // Get debug options
     getDebugOptions(goal);
+    controller_.resetEstimate();
 
     while(!done)
     {

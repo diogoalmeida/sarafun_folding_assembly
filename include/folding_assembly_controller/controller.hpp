@@ -40,6 +40,7 @@ class foldingController
     void tangentForceControl();
     void rodForceControl();
     void debugRodForceControl();
+    void resetEstimate();
   protected:
     Eigen::Vector3d surfaceNormal_, surfaceTangent_,
                     p1_, p2_, r1_,
