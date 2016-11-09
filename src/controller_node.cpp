@@ -415,7 +415,7 @@ public:
     // Need to define what is a successful folding execution
     if(success)
     {
-      // HACK: The controller node will handle retreating the end-effector
+      // HACK: The controller node will handle retreating the end-effector. This should be a separate action server
       fkpos_->JntToCart(joint_positions_, p1);
       tf::vectorKDLToEigen(p1.p, p1_eig);
       Eigen::Vector3d retreat_direction = p1_eig - contact_point;
@@ -431,6 +431,7 @@ public:
       {
         if(!handlePreemption(begin_time))
         {
+          success = false;
           break;
         }
 
@@ -456,7 +457,10 @@ public:
         rate.sleep();
       }
 
-      handleSuccess(begin_time);
+      if (success) // handlePreemption and handleSuccess are mutually exclusive for the same goal
+      {
+        handleSuccess(begin_time);
+      }
     }
   }
 
