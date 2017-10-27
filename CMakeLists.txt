@@ -16,8 +16,7 @@ find_package(
 	tf_conversions
 	tf
 	abb_irb14000_support
-        sarafun_msgs
-  #Eigen REQUIRED
+  sarafun_msgs
 )
 
 add_definitions(-std=c++11)
@@ -42,25 +41,26 @@ generate_messages(
 catkin_package(
   CATKIN_DEPENDS message_runtime actionlib_msgs
   INCLUDE_DIRS include
-  LIBRARIES folding_assembly_controller contact_point_estimator
+  LIBRARIES kalman_filter
 )
 
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  #${Eigen_INCLUDE_DIRS}
 )
 
-add_library(folding_assembly_controller src/controller.cpp)
-target_link_libraries(folding_assembly_controller ${catkin_LIBRARIES})# ${Eigen_LIBRARIES})
+# add_library(folding_assembly_controller src/controller.cpp)
+# target_link_libraries(folding_assembly_controller ${catkin_LIBRARIES})
+# add_dependencies(folding_assembly_controller ${catkin_EXPORTED_TARGETS})
 
-add_library(contact_point_estimator src/contact_point_estimator.cpp)
-target_link_libraries(contact_point_estimator ${catkin_LIBRARIES})# ${Eigen_LIBRARIES})
+add_library(kalman_filter src/kalman_filter.cpp src/utils/matrix_parser.cpp)
+target_link_libraries(kalman_filter ${catkin_LIBRARIES})
+add_dependencies(kalman_filter ${catkin_EXPORTED_TARGETS})
 
-add_executable(folding_assembly_node src/controller_node.cpp)
-target_link_libraries(folding_assembly_node folding_assembly_controller contact_point_estimator ${catkin_LIBRARIES})
-add_dependencies(folding_assembly_node ${catkin_EXPORTED_TARGETS})
-
-add_executable(estimator_node src/estimator_node.cpp)
-target_link_libraries(estimator_node contact_point_estimator ${catkin_LIBRARIES})
-add_dependencies(estimator_node ${catkin_EXPORTED_TARGETS})
+# add_executable(folding_assembly_node src/controller_node.cpp)
+# target_link_libraries(folding_assembly_node folding_assembly_controller contact_point_estimator ${catkin_LIBRARIES})
+# add_dependencies(folding_assembly_node ${catkin_EXPORTED_TARGETS})
+#
+# add_executable(estimator_node src/estimator_node.cpp)
+# target_link_libraries(estimator_node contact_point_estimator ${catkin_LIBRARIES})
+# add_dependencies(estimator_node ${catkin_EXPORTED_TARGETS})
