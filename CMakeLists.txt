@@ -49,18 +49,6 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-# add_library(folding_assembly_controller src/controller.cpp)
-# target_link_libraries(folding_assembly_controller ${catkin_LIBRARIES})
-# add_dependencies(folding_assembly_controller ${catkin_EXPORTED_TARGETS})
-
 add_library(kalman_filter src/kalman_filter.cpp src/utils/matrix_parser.cpp)
 target_link_libraries(kalman_filter ${catkin_LIBRARIES})
 add_dependencies(kalman_filter ${catkin_EXPORTED_TARGETS})
-
-# add_executable(folding_assembly_node src/controller_node.cpp)
-# target_link_libraries(folding_assembly_node folding_assembly_controller contact_point_estimator ${catkin_LIBRARIES})
-# add_dependencies(folding_assembly_node ${catkin_EXPORTED_TARGETS})
-#
-# add_executable(estimator_node src/estimator_node.cpp)
-# target_link_libraries(estimator_node contact_point_estimator ${catkin_LIBRARIES})
-# add_dependencies(estimator_node ${catkin_EXPORTED_TARGETS})
