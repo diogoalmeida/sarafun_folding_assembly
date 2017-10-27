@@ -56,3 +56,7 @@ add_dependencies(kalman_filter ${catkin_EXPORTED_TARGETS})
 add_library(ects_controller src/ects.cpp )
 target_link_libraries(ects_controller ${catkin_LIBRARIES})
 add_dependencies(ects_controller ${catkin_EXPORTED_TARGETS})
+
+add_library(adaptive_controller src/adaptive_velocity_controller.cpp )
+target_link_libraries(adaptive_controller ${catkin_LIBRARIES})
+add_dependencies(adaptive_controller ${catkin_EXPORTED_TARGETS})
