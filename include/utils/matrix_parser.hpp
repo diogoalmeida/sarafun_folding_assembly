@@ -27,6 +27,14 @@ namespace folding_utils{
     **/
     bool parseMatrixData(Eigen::MatrixXd &M, const std::string param_name, const ros::NodeHandle &n);
 
+    /**
+      Computed the skew-symmetric matrix of a 3-dimensional vector.
+
+      @param v The 3-dimensional vector
+      @return The skew-symmetric matrix
+    **/
+    Eigen::Matrix3d computeSkewSymmetric(const Eigen::Vector3d &v);
+
   private:
     /**
       Fill in a nxn matrix with the given values.

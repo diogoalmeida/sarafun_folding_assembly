@@ -66,19 +66,19 @@ namespace folding_algorithms{
 
     I = Eigen::MatrixXd::Identity(x_.rows(), x_.rows());
 
-    A = computeSkewSymmetric(x_dot_e1.block<3,1>(3,0));
+    A = matrix_parser_.computeSkewSymmetric(x_dot_e1.block<3,1>(3,0));
 
     if (wrench.rows() == 6)
     {
-      C = -computeSkewSymmetric(wrench.block<3,1>(0,0));
-      y = wrench.block<3,1>(3,0) - computeSkewSymmetric(wrench.block<3,1>(0,0))*p_e1;
+      C = -matrix_parser_.computeSkewSymmetric(wrench.block<3,1>(0,0));
+      y = wrench.block<3,1>(3,0) - matrix_parser_.computeSkewSymmetric(wrench.block<3,1>(0,0))*p_e1;
     }
     else
     {
-      C.block<3,3>(0,0) = -computeSkewSymmetric(wrench.block<3,1>(0,0));
-      C.block<3,3>(3,0) = -computeSkewSymmetric(wrench.block<3,1>(6,0));
-      y.block<3,1>(0,0) = wrench.block<3,1>(3,0) - computeSkewSymmetric(wrench.block<3,1>(0,0))*p_e1;
-      y.block<3,1>(0,0) = wrench.block<3,1>(9,0) - computeSkewSymmetric(wrench.block<3,1>(6,0))*p_e2;
+      C.block<3,3>(0,0) = -matrix_parser_.computeSkewSymmetric(wrench.block<3,1>(0,0));
+      C.block<3,3>(3,0) = -matrix_parser_.computeSkewSymmetric(wrench.block<3,1>(6,0));
+      y.block<3,1>(0,0) = wrench.block<3,1>(3,0) - matrix_parser_.computeSkewSymmetric(wrench.block<3,1>(0,0))*p_e1;
+      y.block<3,1>(0,0) = wrench.block<3,1>(9,0) - matrix_parser_.computeSkewSymmetric(wrench.block<3,1>(6,0))*p_e2;
     }
 
     // process model
@@ -92,16 +92,5 @@ namespace folding_algorithms{
     P_= (I - K*C)*P_hat.selfadjointView<Eigen::Upper>();
 
     return x_;
-  }
-
-  Eigen::Matrix3d KalmanEstimator::computeSkewSymmetric(const Eigen::Vector3d &v)
-  {
-    Eigen::Matrix3d S;
-
-    S << 0,    -v(2),  v(1),
-         v(2),  0   , -v(0),
-        -v(1),  v(0),  0;
-
-    return S;
   }
 }

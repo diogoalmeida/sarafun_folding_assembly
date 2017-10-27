@@ -44,14 +44,6 @@ typedef Eigen::Matrix<double, 6, 1> Vector6d;
     **/
     bool initialize(const Eigen::VectorXd &x);
 
-    /**
-      Load the estimator parameters from the ROS parameter server.
-
-      @throw logic_error in case some parameter is incorrectly set.
-      @return False in case some parameter is missing.
-    **/
-    bool getParams();
-
   private:
     ros::NodeHandle n_;
     Eigen::VectorXd x_;
@@ -59,12 +51,12 @@ typedef Eigen::Matrix<double, 6, 1> Vector6d;
     folding_utils::MatrixParser matrix_parser_;
 
     /**
-      Computed the skew-symmetric matrix of a 3-dimensional vector.
+      Load the estimator parameters from the ROS parameter server.
 
-      @param v The 3-dimensional vector
-      @return The skew-symmetric matrix
+      @throw logic_error in case some parameter is incorrectly set.
+      @return False in case some parameter is missing.
     **/
-    Eigen::Matrix3d computeSkewSymmetric(const Eigen::Vector3d &v);
+    bool getParams();
   };
 }
 #endif

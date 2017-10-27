@@ -41,7 +41,7 @@ generate_messages(
 catkin_package(
   CATKIN_DEPENDS message_runtime actionlib_msgs
   INCLUDE_DIRS include
-  LIBRARIES kalman_filter
+  LIBRARIES kalman_filter ects_controller
 )
 
 include_directories(
@@ -52,3 +52,7 @@ include_directories(
 add_library(kalman_filter src/kalman_filter.cpp src/utils/matrix_parser.cpp)
 target_link_libraries(kalman_filter ${catkin_LIBRARIES})
 add_dependencies(kalman_filter ${catkin_EXPORTED_TARGETS})
+
+add_library(ects_controller src/ects.cpp )
+target_link_libraries(ects_controller ${catkin_LIBRARIES})
+add_dependencies(ects_controller ${catkin_EXPORTED_TARGETS})
