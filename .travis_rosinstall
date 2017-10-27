@@ -1,0 +1,4 @@
+# travis
+- git:
+    local-name: sarafun_msgs
+    uri: https://github.com/diogoalmeida/sarafun_msgs.git
