@@ -41,7 +41,7 @@ generate_messages(
 catkin_package(
   CATKIN_DEPENDS message_runtime actionlib_msgs
   INCLUDE_DIRS include
-  LIBRARIES kalman_filter ects_controller
+  LIBRARIES
 )
 
 include_directories(
@@ -60,3 +60,7 @@ add_dependencies(ects_controller ${catkin_EXPORTED_TARGETS})
 add_library(adaptive_controller src/adaptive_velocity_controller.cpp )
 target_link_libraries(adaptive_controller ${catkin_LIBRARIES})
 add_dependencies(adaptive_controller ${catkin_EXPORTED_TARGETS})
+
+add_library(pose_controller src/pose_controller.cpp )
+target_link_libraries(pose_controller ${catkin_LIBRARIES})
+add_dependencies(pose_controller ${catkin_EXPORTED_TARGETS})
