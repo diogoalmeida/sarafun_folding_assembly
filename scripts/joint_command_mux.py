@@ -41,14 +41,10 @@ def joint_publisher():
     '''At a pre-defined rate, publish joint commands to the yumi controllers.'''
     rospy.init_node('yumi_joint_mux')
 
-    ret = rospy.search_param('joint_mux/controllers')
-    print(ret)
-    print(rospy.get_name())
-    print(rospy.resolve_name('joint_mux/controllers'))
-    if rospy.has_param('joint_mux/controllers'):
-        joint_controllers = rospy.get_param('joint_mux/controllers')
+    if rospy.has_param('~controllers'):
+        joint_controllers = rospy.get_param('~controllers')
     else:
-        rospy.logerr("Missing joint controllers definition (joint_mux/joint_controllers)")
+        rospy.logerr("Missing joint controllers definition (controllers)")
         return False
 
     # TODO: sanity check
@@ -57,16 +53,16 @@ def joint_publisher():
 
     publishers = {joint_controllers[key]:rospy.Publisher('/yumi/' + key + '/command', Float64, queue_size=10) for key in joint_controllers}
 
-    if rospy.has_param('joint_mux/joint_topic'):
-        joint_topic = rospy.get_param('joint_mux/joint_topic')
+    if rospy.has_param('~joint_topic'):
+        joint_topic = rospy.get_param('~joint_topic')
     else:
-        rospy.logerr("Missing joint topic name (joint_mux/joint_topic)")
+        rospy.logerr("Missing joint topic name (joint_topic)")
         return False
 
-    if rospy.has_param('joint_mux/pub_rate'):
-        pub_rate = rospy.get_param('joint_mux/pub_rate')
+    if rospy.has_param('~pub_rate'):
+        pub_rate = rospy.get_param('~pub_rate')
     else:
-        rospy.logwarn("Missing pub rate. Using default (joint_mux/pub_rate)")
+        rospy.logwarn("Missing pub rate. Using default (pub_rate)")
         pub_rate = 100
 
     joint_subscriber = JointSubscriber(joint_topic, joint_names)

@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="simmode"  default="false" />
+  <node name="joint_mux" pkg="folding_assembly_controller" type="joint_command_mux.py" output="screen">
+    <rosparam command="load" file="$(find folding_assembly_controller)/input/config_mux.yaml"/>
+  </node>
+
+  <!-- <arg name="simmode"  default="false" />
   <arg name="rvizconfig" default="$(find folding_assembly_controller)/rviz_abb.rviz" />
   <arg name="test_estimator" default="false" />
   <arg name="test_folding" default="true" />
@@ -26,5 +30,5 @@
   <group if="$(arg simmode)">
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
-  </group>
+  </group> -->
 </launch>
