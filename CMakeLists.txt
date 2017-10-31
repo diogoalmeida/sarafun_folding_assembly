@@ -48,7 +48,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-set(dependencies src/kalman_filter.cpp src/utils/matrix_parser.cpp src/ects.cpp src/adaptive_velocity_controller.cpp src/pose_controller.cpp)
+set(dependencies src/kalman_filter.cpp src/utils/matrix_parser.cpp src/ects.cpp src/adaptive_velocity_controller.cpp src/pose_controller.cpp src/utils/kdl_manager.cpp)
 
 add_executable(folding_action_node src/folding_action_node.cpp ${dependencies})
 target_link_libraries(folding_action_node ${catkin_LIBRARIES})

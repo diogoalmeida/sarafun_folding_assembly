@@ -32,7 +32,10 @@ class JointSubscriber:
         if self.joint_data == None or (rospy.get_time() - self.last_time) > self.max_wait_time:
             joint_commands = {value:0 for value in self.joint_names}
         else:
-            joint_commands = {value.name:Float64(value.velocity) for value in self.joint_data if value.name in self.joint_names}
+            joint_commands = {}
+            for i in xrange(len(self.joint_data.name)):
+                if self.joint_data.name[i] in self.joint_names:
+                    joint_commands[self.joint_data.name[i]] = Float64(self.joint_data.velocity[i])
 
         return joint_commands
 
