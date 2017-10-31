@@ -8,6 +8,8 @@ namespace folding_utils
       {
         throw std::runtime_error("ERROR getting robot description (/robot_description)");
       }
+
+      eps_ = 0.001; // TODO: Make parameter
     }
 
     KDLManager::~KDLManager() {}
