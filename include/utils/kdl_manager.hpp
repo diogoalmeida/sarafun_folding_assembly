@@ -79,6 +79,16 @@ namespace folding_utils
     **/
     bool getVelIK(const std::string &end_effector_link, const sensor_msgs::JointState &state, const KDL::Twist &in, KDL::JntArray &out);
 
+    /**
+      Returns the jacobian the requested end-effector's chain.
+
+      @param end_effector_link The name of the requested end-effector.
+      @param state The current robot joint state.
+      @param out End-effector's jacobian.
+      @return False in case something goes wrong, true otherwise.
+    **/
+    bool getJacobian(const std::string &end_effector_link, const sensor_msgs::JointState &state, KDL::Jacobian &out);
+
   private:
     std::vector<std::shared_ptr<KDL::ChainIkSolverVel_wdls> > ikvel_;
     std::vector<std::shared_ptr<KDL::ChainIkSolverPos_LMA> > ikpos_;

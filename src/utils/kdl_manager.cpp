@@ -167,6 +167,26 @@ namespace folding_utils
       return true;
     }
 
+    bool KDLManager::getJacobian(const std::string &end_effector_link, const sensor_msgs::JointState &state, KDL::Jacobian &out)
+    {
+      int arm;
+
+      if (!getArmIndex(end_effector_link, arm))
+      {
+        return false;
+      }
+
+      KDL::JntArray positions;
+      KDL::JntArrayVel velocities;
+      if (!getChainJointState(state, chain_[arm], positions, velocities))
+      {
+        return false;
+      }
+
+      jac_solver_[arm]->JntToJac(positions, out);
+      return true;
+    }
+
     bool KDLManager::getChainJointState(const sensor_msgs::JointState &current_state, const KDL::Chain &chain, KDL::JntArray &positions, KDL::JntArrayVel &velocities)
     {
       unsigned int processed_joints = 0;
