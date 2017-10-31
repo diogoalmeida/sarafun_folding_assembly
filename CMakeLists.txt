@@ -22,15 +22,14 @@ find_package(
 add_definitions(-std=c++11)
 link_directories(${catkin_LIBRARY_DIRS})
 
-add_message_files(
-  FILES
-  monitorMsg.msg
-)
+# add_message_files(
+#   FILES
+# )
 
-add_action_files(
-	DIRECTORY action
-	FILES FoldingAssembly.action Estimate.action
-)
+# add_action_files(
+# 	DIRECTORY action
+# 	FILES
+# )
 
 generate_messages(
   DEPENDENCIES
