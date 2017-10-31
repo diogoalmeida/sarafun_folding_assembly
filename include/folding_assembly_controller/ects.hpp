@@ -8,6 +8,7 @@
 #include <limits>
 #include <stdexcept>
 #include <utils/matrix_parser.hpp>
+#include <utils/kdl_manager.hpp>
 #include <cmath>
 
 
@@ -32,19 +33,19 @@ typedef Eigen::Matrix<double, 14, 1> Vector14d;
   class ECTSController
   {
   public:
-    ECTSController(const KDL::Chain &chain_1, const KDL::Chain &chain_2);
+    ECTSController(const std::string &rod_eef, const std::string &surface_eef, std::shared_ptr<folding_utils::KDLManager> kdl_manager);
     ~ECTSController();
 
     /**
       Computes the ECTS reference joint velocities for the two manipulators.
 
-      @param qi The manipulators' joint states
+      @param state The dual-arm manipulator joint state.
       @param ri The virtual sticks connecting the manipulators end-effectors to the task C-Frame.
       @param twist_a The commanded absolute motion twist.
       @param twist_r The commanded relative motion twist.
       @return The 14 dimensional joint velocities vector.
     **/
-    Vector14d control(const Vector3d &r1, const Vector3d &r2, const KDL::JntArray &q1, const KDL::JntArray &q2, const Vector6d &twist_a, const Vector6d &twist_r);
+    Vector14d control(const sensor_msgs::JointState &state, const Vector3d &r1, const Vector3d &r2, const Vector6d &twist_a, const Vector6d &twist_r);
 
     /**
       Return the current alpha value that determines the degree of colaboration between arms.
@@ -63,17 +64,18 @@ typedef Eigen::Matrix<double, 14, 1> Vector14d;
     ros::NodeHandle nh_;
     double alpha_, damping_;
     int beta_;
-    std::vector<boost::shared_ptr<KDL::ChainJntToJacSolver> > jac_solver_;
+    std::string rod_eef_, surface_eef_;
     folding_utils::MatrixParser matrix_parser_;
+    std::shared_ptr<folding_utils::KDLManager> kdl_manager_;
 
     /**
       Computes the ECTS jacobian that maps joints to task space twists.
 
-      @param qi Joint state of arm i
+      @param state The dual-arm manipulator joint state.
       @param r_i virtual stick connecting eef i to task frame
       @return The ECTS jacobian.
     **/
-    MatrixECTS computeECTSJacobian(const KDL::JntArray &q1, const KDL::JntArray &q2, const Vector3d &r_1, const Vector3d &r_2);
+    MatrixECTS computeECTSJacobian(const sensor_msgs::JointState &state, const Vector3d &r_1, const Vector3d &r_2);
 
     /**
       Loads the ECTS controller parameters from the ros parameter server.

@@ -1,18 +1,15 @@
 #include <folding_assembly_controller/ects.hpp>
 
 namespace folding_algorithms{
-  ECTSController::ECTSController(const KDL::Chain &chain_1, const KDL::Chain &chain_2)
+  ECTSController::ECTSController(const std::string &rod_eef, const std::string &surface_eef, std::shared_ptr<folding_utils::KDLManager> kdl_manager) :
+  rod_eef_(rod_eef), surface_eef_(surface_eef_), kdl_manager_(kdl_manager)
 {
-  jac_solver_.resize(2);
-  jac_solver_[0].reset(new KDL::ChainJntToJacSolver(chain_1));
-  jac_solver_[1].reset(new KDL::ChainJntToJacSolver(chain_2));
-
   nh_ = ros::NodeHandle("~");
 }
 
 ECTSController::~ECTSController(){}
 
-Vector14d ECTSController::control(const Vector3d &r1, const Vector3d &r2, const KDL::JntArray &q1, const KDL::JntArray &q2, const Vector6d &twist_a, const Vector6d &twist_r)
+Vector14d ECTSController::control(const sensor_msgs::JointState &state, const Vector3d &r1, const Vector3d &r2, const Vector6d &twist_a, const Vector6d &twist_r)
 {
   MatrixECTS J = MatrixECTS::Zero();
   Matrix14d I = Matrix14d::Identity();
@@ -23,7 +20,7 @@ Vector14d ECTSController::control(const Vector3d &r1, const Vector3d &r2, const 
   total_twist.block<6,1>(0,0) = twist_a;
   total_twist.block<6,1>(6,0) = twist_r;
 
-  J = computeECTSJacobian(q1, q2, r1, r2);
+  J = computeECTSJacobian(state, r1, r2);
 
   damped_inverse = (J*J.transpose() + damping_*Matrix12d::Identity());
 
@@ -53,14 +50,14 @@ double ECTSController::getAlpha()
   return alpha_;
 }
 
-MatrixECTS ECTSController::computeECTSJacobian(const KDL::JntArray &q1, const KDL::JntArray &q2, const Vector3d &r_1, const Vector3d &r_2)
+MatrixECTS ECTSController::computeECTSJacobian(const sensor_msgs::JointState &state, const Vector3d &r_1, const Vector3d &r_2)
 {
   Matrix12d C = Matrix12d::Zero(), W = Matrix12d::Identity();
   MatrixECTS J_e, J = MatrixECTS::Zero();
   KDL::Jacobian J_1_kdl(7), J_2_kdl(7);
 
-  jac_solver_[0]->JntToJac(q1, J_1_kdl);
-  jac_solver_[1]->JntToJac(q2, J_2_kdl);
+  kdl_manager_->getJacobian(rod_eef_, state, J_1_kdl);
+  kdl_manager_->getJacobian(surface_eef_, state, J_2_kdl);
 
   C.block<6,6>(0,0) = alpha_*Matrix6d::Identity();
   C.block<6,6>(0,6) = (1 - alpha_)*Matrix6d::Identity();
