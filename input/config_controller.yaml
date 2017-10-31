@@ -1,30 +1,32 @@
+ects_controller:
+  alpha: 0.5
+  beta: 1
+  damping: 0.01
+adaptive_estimator:
+  alpha_force: 0.1
+  beta_force: 0.01
+  alpha_adapt_t: 1
+  alpha_torque: 0.1
+  beta_torque: 0.01
+  alpha_adapt_r: 1
+  torque_slack: 0
+  max_force: 2
+  max_torque: 0.1
+kf_estimator:
+  Q:
+    data: [0.01, 0, 0,
+           0, 0.01, 0,
+           0, 0, 0.01]
+  R:
+    data: [0.01, 0, 0,
+           0.0, 0.01, 0,
+           0, 0, 0.01]
+  ft_sensor_topic: /optoforce_node/wrench_IRE0A004
 
-# Configuration file for the folding assembly controller
-folding_controller:
-  saturation:
-    v: 0.1
-    w: 0.1
-    gains:
-      kf: 0.001
-  breaking_error: 0.01 # When the part gets within **breaking_error** radians from the desired final orientation, the controller will start slowing down
-  known_pc_distance: 0.20 #0.16 # used for testing the controller with no estimation
-  base_frame: /base_link # name of the world frame (TF)
-  ft_frame: /IRE0A004 # name of the force torque sensor frame (TF)
-  # ft_sensor_offset: [0.0, 0.0, 0.0]
-  ft_sensor_offset: [0.01, -0.043, -0.019]
-
-folding_node:
-  frequency: 100
-  yumi_state_topic: /egmri_feedback_topic
-  yumi_command_topic: /egmri_commanded_topic
-  arm: left
-  left_tooltip_name: left_gripper_base
-  right_tooltip_name: right_gripper_base
-  success_error: 0.01 # When the part gets within **success_error** radians from the desired final orientation, the node will succeed
 
 
 # GOOD MESSAGE
-# 
+#
 # desired_velocities:
 #   linear:
 #     x: 0.0

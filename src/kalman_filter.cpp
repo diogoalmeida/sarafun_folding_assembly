@@ -11,12 +11,12 @@ namespace folding_algorithms{
 
   bool KalmanEstimator::getParams()
   {
-    if(!matrix_parser_.parseMatrixData(Q_, "estimator/Q", n_))
+    if(!matrix_parser_.parseMatrixData(Q_, "kf_estimator/Q", n_))
     {
       return false;
     }
 
-    if(!matrix_parser_.parseMatrixData(R_, "estimator/R", n_))
+    if(!matrix_parser_.parseMatrixData(R_, "kf_estimator/R", n_))
     {
       return false;
     }
