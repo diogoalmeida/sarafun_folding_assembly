@@ -2,3 +2,6 @@
 - git:
     local-name: sarafun_msgs
     uri: https://github.com/diogoalmeida/sarafun_msgs.git
+- git:
+    local-name: abb_irb14000_support
+    uri: https://github.com/diogoalmeida/fake_abb_irb14000_support.git
