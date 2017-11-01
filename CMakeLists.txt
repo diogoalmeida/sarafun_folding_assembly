@@ -27,16 +27,16 @@ link_directories(${catkin_LIBRARY_DIRS})
 #   FILES
 # )
 
-# add_action_files(
-# 	DIRECTORY action
-# 	FILES
-# )
+add_action_files(
+	DIRECTORY action
+	FILES FoldingController.action
+)
 
-# generate_messages(
-#   DEPENDENCIES
-# 	actionlib_msgs
-#   geometry_msgs
-# )
+generate_messages(
+  DEPENDENCIES
+	actionlib_msgs
+  geometry_msgs
+)
 
 catkin_package(
   CATKIN_DEPENDS message_runtime actionlib_msgs generic_control_toolbox
