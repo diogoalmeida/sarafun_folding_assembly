@@ -15,6 +15,7 @@
 #include <urdf/model.h>
 #include <kdl/frames.hpp>
 #include <stdexcept>
+#include <utils/manager_base.hpp>
 
 namespace folding_utils
 {
@@ -22,7 +23,7 @@ namespace folding_utils
     Loads and maintains a URDF robot description and provides access to relevant
     KDL objects/solvers. Supports n end-effectors
   **/
-  class KDLManager
+  class KDLManager : public ManagerBase
   {
   public:
     KDLManager(const std::string &chain_base_link);
@@ -98,19 +99,9 @@ namespace folding_utils
     std::vector<KDL::Chain> chain_;
 
     urdf::Model model_;
-    std::vector<std::string> end_effector_link_;
     std::vector<std::vector<std::string> > actuated_joint_names_; // list of actuated joints per arm
     std::string chain_base_link_;
     double eps_;
-
-    /**
-      Get the index of the arm with the given end-effector.
-
-      @param eef The end-effector of the kinematic chain.
-      @param arm The arm index
-      @return true if the arm is found, false otherwise.
-    **/
-    bool getArmIndex(const std::string &eef, int &arm);
 
     /**
       Fills in the joint arrays with the state of a given kinematic chain.

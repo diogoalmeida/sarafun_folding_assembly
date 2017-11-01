@@ -16,12 +16,12 @@ namespace folding_utils
 
     bool KDLManager::initializeArm(const std::string &end_effector_link)
     {
-      if(std::find(end_effector_link_.begin(), end_effector_link_.end(), end_effector_link) == end_effector_link_.end())
+      int a;
+      if(getArmIndex(end_effector_link, a))
       {
         ROS_ERROR("Tried to initialize arm %s, but it was already initialized", end_effector_link.c_str());
         return false;
       }
-
 
       KDL::Tree tree;
       KDL::Joint kdl_joint;
@@ -37,7 +37,7 @@ namespace folding_utils
       // joint_velocities.qdot.resize(chain.getNrOfJoints());
 
       // Ready to accept the end-effector as valid
-      end_effector_link_.push_back(end_effector_link);
+      end_effector_.push_back(end_effector_link);
       chain_.push_back(chain);
       std::vector<std::string> new_vector;
 
@@ -61,28 +61,6 @@ namespace folding_utils
       fkvel_.push_back(std::shared_ptr<KDL::ChainFkSolverVel_recursive>(new KDL::ChainFkSolverVel_recursive(chain)));
       ikpos_.push_back(std::shared_ptr<KDL::ChainIkSolverPos_LMA>(new KDL::ChainIkSolverPos_LMA(chain)));
       jac_solver_.push_back(std::shared_ptr<KDL::ChainJntToJacSolver>(new KDL::ChainJntToJacSolver(chain)));
-
-      return true;
-    }
-
-    bool KDLManager::getArmIndex(const std::string &eef, int &arm)
-    {
-      arm = -1;
-
-      for (int i = 0; i < end_effector_link_.size(); i++)
-      {
-        if (eef == end_effector_link_[i])
-        {
-          arm = i;
-          break;
-        }
-      }
-
-      if (arm < 0)
-      {
-        ROS_ERROR("End-effector %s was not initialized", eef.c_str());
-        return false;
-      }
 
       return true;
     }
