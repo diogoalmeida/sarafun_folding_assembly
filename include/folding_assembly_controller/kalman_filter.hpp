@@ -6,7 +6,7 @@
 #include <math.h>
 #include <limits>
 #include <stdexcept>
-#include <utils/matrix_parser.hpp>
+#include <generic_control_toolbox/matrix_parser.hpp>
 
 namespace folding_algorithms{
 typedef Eigen::Matrix<double, 6, 1> Vector6d;
@@ -48,7 +48,7 @@ typedef Eigen::Matrix<double, 6, 1> Vector6d;
     ros::NodeHandle n_;
     Eigen::VectorXd x_;
     Eigen::MatrixXd P_, Q_, R_;
-    folding_utils::MatrixParser matrix_parser_;
+    generic_control_toolbox::MatrixParser matrix_parser_;
 
     /**
       Load the estimator parameters from the ROS parameter server.

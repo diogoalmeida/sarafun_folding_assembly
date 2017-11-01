@@ -1,38 +1,26 @@
 <?xml version="1.0"?>
-<package>
+<package format="2">
   <name>folding_assembly_controller</name>
-  <version>0.0.1</version>
+  <version>0.1.0</version>
   <description>The folding_assembly_controller package</description>
   <maintainer email="diogoa@kth.se">diogo</maintainer>
   <license>KTH</license>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>geometry_msgs</build_depend>
-  <build_depend>roscpp</build_depend>
-  <run_depend>geometry_msgs</run_depend>
-  <run_depend>roscpp</run_depend>
-  <build_depend>cmake_modules</build_depend>
-  <run_depend>cmake_modules</run_depend>
-  <build_depend>actionlib_msgs</build_depend>
-  <run_depend>actionlib_msgs</run_depend>
-  <build_depend>actionlib</build_depend>
-  <run_depend>actionlib</run_depend>
-  <build_depend>sensor_msgs</build_depend>
-  <run_depend>sensor_msgs</run_depend>
-  <build_depend>tf</build_depend>
-  <run_depend>tf</run_depend>
-  <build_depend>tf_conversions</build_depend>
-  <run_depend>tf_conversions</run_depend>
-  <build_depend>abb_irb14000_support</build_depend>
-  <run_depend>abb_irb14000_support</run_depend>
-  <build_depend>eigen_conversions</build_depend>
-  <run_depend>eigen_conversions</run_depend>
-  <build_depend>message_generation</build_depend>
-  <run_depend>message_runtime</run_depend>
-  <build_depend>std_msgs</build_depend>
-  <run_depend>std_msgs</run_depend>
-  <run_depend>kdl_parser</run_depend>
-  <build_depend>kdl_parser</build_depend>
-  <build_depend>sarafun_msgs</build_depend>
-  <run_depend>sarafun_msgs</run_depend>
+  <depend>geometry_msgs</depend>
+  <depend>roscpp</depend>
+  <depend>cmake_modules</depend>
+  <depend>actionlib_msgs</depend>
+  <depend>actionlib</depend>
+  <depend>sensor_msgs</depend>
+  <depend>tf</depend>
+  <depend>tf_conversions</depend>
+  <depend>abb_irb14000_support</depend>
+  <depend>eigen_conversions</depend>
+  <depend>message_generation</depend>
+  <depend>message_runtime</depend>
+  <depend>std_msgs</depend>
+  <depend>kdl_parser</depend>
+  <depend>sarafun_msgs</depend>
+  <depend>generic_control_toolbox</depend>
 </package>

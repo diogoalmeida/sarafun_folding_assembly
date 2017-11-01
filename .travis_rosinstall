@@ -5,3 +5,6 @@
 - git:
     local-name: abb_irb14000_support
     uri: https://github.com/diogoalmeida/fake_abb_irb14000_support.git
+- git:
+    local-name: generic_control_toolbox
+    uri: https://github.com/diogoalmeida/generic_control_toolbox.git

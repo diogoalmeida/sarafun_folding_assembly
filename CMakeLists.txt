@@ -17,6 +17,7 @@ find_package(
 	tf
 	abb_irb14000_support
   sarafun_msgs
+  generic_control_toolbox
 )
 
 add_definitions(-std=c++11)
@@ -31,14 +32,14 @@ link_directories(${catkin_LIBRARY_DIRS})
 # 	FILES
 # )
 
-generate_messages(
-  DEPENDENCIES
-	actionlib_msgs
-  geometry_msgs
-)
+# generate_messages(
+#   DEPENDENCIES
+# 	actionlib_msgs
+#   geometry_msgs
+# )
 
 catkin_package(
-  CATKIN_DEPENDS message_runtime actionlib_msgs
+  CATKIN_DEPENDS message_runtime actionlib_msgs generic_control_toolbox
   INCLUDE_DIRS include
   LIBRARIES
 )
@@ -51,13 +52,9 @@ include_directories(
 set(
   dependencies
   src/kalman_filter.cpp
-  src/utils/matrix_parser.cpp
   src/ects.cpp
   src/adaptive_velocity_controller.cpp
   src/pose_controller.cpp
-  src/utils/kdl_manager.cpp
-  src/utils/wrench_manager.cpp
-  src/utils/manager_base.cpp
 )
 
 add_executable(folding_action_node src/folding_action_node.cpp ${dependencies})

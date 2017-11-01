@@ -7,8 +7,8 @@
 #include <kdl/chainjnttojacsolver.hpp>
 #include <limits>
 #include <stdexcept>
-#include <utils/matrix_parser.hpp>
-#include <utils/kdl_manager.hpp>
+#include <generic_control_toolbox/matrix_parser.hpp>
+#include <generic_control_toolbox/kdl_manager.hpp>
 #include <cmath>
 
 
@@ -33,7 +33,7 @@ typedef Eigen::Matrix<double, 14, 1> Vector14d;
   class ECTSController
   {
   public:
-    ECTSController(const std::string &rod_eef, const std::string &surface_eef, std::shared_ptr<folding_utils::KDLManager> kdl_manager);
+    ECTSController(const std::string &rod_eef, const std::string &surface_eef, std::shared_ptr<generic_control_toolbox::KDLManager> kdl_manager);
     ~ECTSController();
 
     /**
@@ -65,8 +65,8 @@ typedef Eigen::Matrix<double, 14, 1> Vector14d;
     double alpha_, damping_;
     int beta_;
     std::string rod_eef_, surface_eef_;
-    folding_utils::MatrixParser matrix_parser_;
-    std::shared_ptr<folding_utils::KDLManager> kdl_manager_;
+    generic_control_toolbox::MatrixParser matrix_parser_;
+    std::shared_ptr<generic_control_toolbox::KDLManager> kdl_manager_;
 
     /**
       Computes the ECTS jacobian that maps joints to task space twists.
