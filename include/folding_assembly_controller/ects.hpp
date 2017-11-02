@@ -45,12 +45,12 @@ typedef Eigen::Matrix<double, 14, 1> Vector14d;
       @param twist_r The commanded relative motion twist.
       @return The 14 dimensional joint velocities vector.
     **/
-    Vector14d control(const sensor_msgs::JointState &state, const Vector3d &r1, const Vector3d &r2, const Vector6d &twist_a, const Vector6d &twist_r);
+    Vector14d control(const sensor_msgs::JointState &state, const Vector3d &r1, const Vector3d &r2, const Vector6d &twist_a, const Vector6d &twist_r) const;
 
     /**
       Return the current alpha value that determines the degree of colaboration between arms.
     **/
-    double getAlpha();
+    double getAlpha() const;
 
     /**
       Sets the alpha value.
@@ -75,7 +75,7 @@ typedef Eigen::Matrix<double, 14, 1> Vector14d;
       @param r_i virtual stick connecting eef i to task frame
       @return The ECTS jacobian.
     **/
-    MatrixECTS computeECTSJacobian(const sensor_msgs::JointState &state, const Vector3d &r_1, const Vector3d &r_2);
+    MatrixECTS computeECTSJacobian(const sensor_msgs::JointState &state, const Vector3d &r_1, const Vector3d &r_2) const;
 
     /**
       Loads the ECTS controller parameters from the ros parameter server.

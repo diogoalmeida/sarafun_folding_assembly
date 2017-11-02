@@ -14,9 +14,9 @@ class FoldingController : public generic_control_toolbox::ControllerTemplate<Fol
                                                                                 FoldingControllerResult>
 {
 public:
-  FoldingController() : ControllerTemplate<FoldingControllerAction,
-                                           FoldingControllerFeedback,
-                                           FoldingControllerResult>("nhanha") {}
+  FoldingController(const std::string &action_name) : ControllerTemplate<FoldingControllerAction,
+                                                       FoldingControllerFeedback,
+                                                       FoldingControllerResult>(action_name) {}
   virtual ~FoldingController() {}
 
   sensor_msgs::JointState updateControl(const sensor_msgs::JointState &current_state, const ros::Duration &dt)
@@ -28,6 +28,13 @@ public:
 private:
   void goalCB() {}
   void preemptCB() {}
+
+  folding_algorithms::KalmanEstimator kalman_filter_;
+  folding_algorithms::FoldingPoseController pose_controller_;
+  folding_algorithms::AdaptiveController adaptive_velocity_controller_;
+  std::shared_ptr<generic_control_toolbox::KDLManager> kdl_manager_;
+  generic_control_toolbox::WrenchManager wrench_manager_;
+  std::shared_ptr<folding_algorithms::ECTSController> ects_controller_;
 };
 
 
@@ -39,6 +46,6 @@ int main(int argc, char ** argv)
   generic_control_toolbox::KDLManager kdl_manager("blah");
   generic_control_toolbox::WrenchManager wrench_manager();
   folding_algorithms::ECTSController ects_controller("rod", "surface", std::shared_ptr<generic_control_toolbox::KDLManager>(&kdl_manager));
-  FoldingController controller;
+  FoldingController controller("action_name");
   return 0;
 }

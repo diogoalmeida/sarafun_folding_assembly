@@ -50,7 +50,7 @@ typedef Eigen::Matrix<double, 6, 1> Vector6d;
       @param t Current translational DOF estimate.
       @param r Current rotational DOF estimate.
     **/
-    void getEstimates(Eigen::Vector3d &t, Eigen::Vector3d &r);
+    void getEstimates(Eigen::Vector3d &t, Eigen::Vector3d &r) const;
 
     /**
       Returns the current value of the force control components.
@@ -58,7 +58,7 @@ typedef Eigen::Matrix<double, 6, 1> Vector6d;
       @param v_f The current value of the force control component.
       @param w_f The current value of the torque control component.
     **/
-    void getForceControlValues(Eigen::Vector3d &v_f, Eigen::Vector3d &w_f);
+    void getForceControlValues(Eigen::Vector3d &v_f, Eigen::Vector3d &w_f) const;
 
     /**
       Returns the current measured force and torque errors.
@@ -67,7 +67,7 @@ typedef Eigen::Matrix<double, 6, 1> Vector6d;
       @param torque_e The torque error.
       @param desired_force Force setpoint.
     **/
-    void getErrors(Eigen::Vector3d &force_e, Eigen::Vector3d &torque_e, Eigen::Vector3d &desired_force);
+    void getErrors(Eigen::Vector3d &force_e, Eigen::Vector3d &torque_e, Eigen::Vector3d &desired_force) const;
 
   private:
     double alpha_force_, beta_force_, alpha_torque_, beta_torque_;
@@ -84,7 +84,7 @@ typedef Eigen::Matrix<double, 6, 1> Vector6d;
       @param dt The elapsed time.
       @return The updated integral value.
     **/
-    Eigen::Vector3d computeIntegralTerm(const Eigen::Vector3d &prev, const Eigen::Vector3d &v, const Eigen::Vector3d &error, double dt);
+    Eigen::Vector3d computeIntegralTerm(const Eigen::Vector3d &prev, const Eigen::Vector3d &v, const Eigen::Vector3d &error, double dt) const;
 
     bool getParams();
   };

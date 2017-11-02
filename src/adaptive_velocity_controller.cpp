@@ -64,14 +64,14 @@ namespace folding_algorithms{
     return ref_twist;
   }
 
-  Eigen::Vector3d AdaptiveController::computeIntegralTerm(const Eigen::Vector3d &prev, const Eigen::Vector3d &v, const Eigen::Vector3d &error, double dt)
+  Eigen::Vector3d AdaptiveController::computeIntegralTerm(const Eigen::Vector3d &prev, const Eigen::Vector3d &v, const Eigen::Vector3d &error, double dt) const
   {
     Eigen::Matrix3d I = Eigen::Matrix3d::Identity();
 
     return prev + (I - v*v.transpose())*error*dt;
   }
 
-  void AdaptiveController::getErrors(Eigen::Vector3d &force_e, Eigen::Vector3d &torque_e, Eigen::Vector3d &desired_force)
+  void AdaptiveController::getErrors(Eigen::Vector3d &force_e, Eigen::Vector3d &torque_e, Eigen::Vector3d &desired_force) const
   {
     Eigen::Vector3d normal = t_.cross(r_);
     force_e = force_error_;
@@ -90,13 +90,13 @@ namespace folding_algorithms{
     f_d_ = f_d;
   }
 
-  void AdaptiveController::getEstimates(Eigen::Vector3d &t, Eigen::Vector3d &r)
+  void AdaptiveController::getEstimates(Eigen::Vector3d &t, Eigen::Vector3d &r) const
   {
     t = t_;
     r = r_;
   }
 
-  void AdaptiveController::getForceControlValues(Eigen::Vector3d &v_f, Eigen::Vector3d &w_f)
+  void AdaptiveController::getForceControlValues(Eigen::Vector3d &v_f, Eigen::Vector3d &w_f) const
   {
     Eigen::Matrix3d I = Eigen::Matrix3d::Identity();
     v_f = (I - t_*t_.transpose())*v_f_;

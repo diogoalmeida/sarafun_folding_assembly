@@ -9,7 +9,7 @@ namespace folding_algorithms{
 
 ECTSController::~ECTSController(){}
 
-Vector14d ECTSController::control(const sensor_msgs::JointState &state, const Vector3d &r1, const Vector3d &r2, const Vector6d &twist_a, const Vector6d &twist_r)
+Vector14d ECTSController::control(const sensor_msgs::JointState &state, const Vector3d &r1, const Vector3d &r2, const Vector6d &twist_a, const Vector6d &twist_r) const
 {
   MatrixECTS J = MatrixECTS::Zero();
   Matrix14d I = Matrix14d::Identity();
@@ -45,12 +45,12 @@ void ECTSController::setAlpha(double alpha)
   }
 }
 
-double ECTSController::getAlpha()
+double ECTSController::getAlpha() const
 {
   return alpha_;
 }
 
-MatrixECTS ECTSController::computeECTSJacobian(const sensor_msgs::JointState &state, const Vector3d &r_1, const Vector3d &r_2)
+MatrixECTS ECTSController::computeECTSJacobian(const sensor_msgs::JointState &state, const Vector3d &r_1, const Vector3d &r_2) const
 {
   Matrix12d C = Matrix12d::Zero(), W = Matrix12d::Identity();
   MatrixECTS J_e, J = MatrixECTS::Zero();
