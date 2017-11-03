@@ -50,12 +50,33 @@ bool FoldingController::setArm(const generic_control_toolbox::ArmInfo &msg)
     {
       return false;
     }
+
+    if (msg.has_ft_sensor)
+    {
+      if (!wrench_manager_.initializeWrenchComm(msg.kdl_eef_frame, msg.sensor_frame, msg.gripping_frame, msg.sensor_topic))
+      {
+        return false;
+      }
+    }
+    else
+    {
+      ROS_WARN("End-effector %s has no F/T sensor.", msg.kdl_eef_frame.c_str());
+    }
+
+    return true;
 }
 
 bool FoldingController::parseGoal(boost::shared_ptr<const FoldingControllerGoal> goal)
 {
   rod_eef_ = goal->rod_arm.kdl_eef_frame;
   surface_eef_ = goal->surface_arm.kdl_eef_frame;
+
+  if (!goal->rod_arm.has_ft_sensor && !goal->surface_arm.has_ft_sensor)
+  {
+    ROS_ERROR("At least one arm must have a F/T sensor");
+    return false;
+  }
+
   try
   {
     ects_controller_.reset(new folding_algorithms::ECTSController(rod_eef_, surface_eef_, kdl_manager_));
