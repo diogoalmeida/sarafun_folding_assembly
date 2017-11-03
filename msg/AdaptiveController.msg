@@ -1,0 +1,3 @@
+float64 init_t_error
+float64 init_k_error
+float64 goal_force

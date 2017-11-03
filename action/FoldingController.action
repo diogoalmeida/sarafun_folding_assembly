@@ -1,7 +1,7 @@
 # Goal
 generic_control_toolbox/ArmInfo rod_arm
 generic_control_toolbox/ArmInfo surface_arm
-float64 contact_force
+folding_assembly_controller/AdaptiveController adaptive_params
 ---
 # Result
 ---

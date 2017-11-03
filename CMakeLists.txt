@@ -23,9 +23,10 @@ find_package(
 add_definitions(-std=c++11)
 link_directories(${catkin_LIBRARY_DIRS})
 
-# add_message_files(
-#   FILES
-# )
+add_message_files(
+  FILES
+	AdaptiveController.msg
+)
 
 add_action_files(
 	DIRECTORY action

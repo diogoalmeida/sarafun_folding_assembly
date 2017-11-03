@@ -26,6 +26,8 @@ bool FoldingController::init()
     return false;
   }
 
+  has_init_ = false; // true if controlAlgorithm has been called after a new goal
+
   // Initialize arms and set gripping points.
   kdl_manager_.reset(new generic_control_toolbox::KDLManager(base_link));
 }
@@ -33,8 +35,15 @@ bool FoldingController::init()
 sensor_msgs::JointState FoldingController::controlAlgorithm(const sensor_msgs::JointState &current_state, const ros::Duration &dt)
 {
   sensor_msgs::JointState ret;
-  Eigen::Vector3d pc_est;
-  KDL::Frame rod_eef_pose, surface_eef_pose;
+  KDL::Frame p1, p2, pc_est;
+
+  kdl_manager_->getGrippingPoint(rod_eef_, current_state, p1);
+  kdl_manager_->getGrippingPoint(surface_eef_, current_state, p2);
+
+  if (!has_init_)
+  {
+
+  }
 
   return ret;
 }
@@ -87,7 +96,11 @@ bool FoldingController::parseGoal(boost::shared_ptr<const FoldingControllerGoal>
     return false;
   }
 
-  adaptive_velocity_controller_.setReferenceForce(goal->contact_force);
+  Eigen::Vector3d t_init, k_init;
+  adaptive_velocity_controller_.setReferenceForce(goal->adaptive_params.goal_force);
+  t_init << cos(goal->adaptive_params.init_t_error), 0, sin(goal->adaptive_params.init_t_error);
+  k_init << cos(goal->adaptive_params.init_k_error), 0, sin(goal->adaptive_params.init_k_error);
+  adaptive_velocity_controller_.initEstimates(t_init, k_init);
 
   if (!setArm(goal->rod_arm))
   {
