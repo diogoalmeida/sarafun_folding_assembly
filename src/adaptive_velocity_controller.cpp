@@ -64,6 +64,12 @@ namespace folding_algorithms{
     return ref_twist;
   }
 
+  void AdaptiveController::reset()
+  {
+    int_force_ = Eigen::Vector3d::Zero();
+    int_torque_ = Eigen::Vector3d::Zero();
+  }
+
   Eigen::Vector3d AdaptiveController::computeIntegralTerm(const Eigen::Vector3d &prev, const Eigen::Vector3d &v, const Eigen::Vector3d &error, double dt) const
   {
     Eigen::Matrix3d I = Eigen::Matrix3d::Identity();

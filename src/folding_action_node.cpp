@@ -87,6 +87,8 @@ bool FoldingController::parseGoal(boost::shared_ptr<const FoldingControllerGoal>
     return false;
   }
 
+  adaptive_velocity_controller_.setReferenceForce(goal->contact_force);
+
   if (!setArm(goal->rod_arm))
   {
     return false;
@@ -102,7 +104,8 @@ bool FoldingController::parseGoal(boost::shared_ptr<const FoldingControllerGoal>
 
 void FoldingController::resetController()
 {
-
+  has_init_ = false;
+  adaptive_velocity_controller_.reset();
 }
 
 int main(int argc, char ** argv)

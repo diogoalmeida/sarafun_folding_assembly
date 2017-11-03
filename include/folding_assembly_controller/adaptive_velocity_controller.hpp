@@ -31,6 +31,11 @@ typedef Eigen::Matrix<double, 6, 1> Vector6d;
     Vector6d control(const Vector6d &wrench, double v_d, double w_d, double dt);
 
     /**
+      Resets the controller back to an initial state.
+    **/
+    void reset();
+
+    /**
       Initialize the adaptive controller estimates.
 
       @param t Initial translational DOF estimate.
