@@ -36,6 +36,7 @@ generate_messages(
   DEPENDENCIES
 	actionlib_msgs
   geometry_msgs
+  generic_control_toolbox
 )
 
 catkin_package(

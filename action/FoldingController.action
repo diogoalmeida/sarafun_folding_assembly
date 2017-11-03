@@ -1,6 +1,6 @@
 # Goal
-string rod_eef
-string surface_eef
+generic_control_toolbox/ArmInfo rod_arm
+generic_control_toolbox/ArmInfo surface_arm
 ---
 # Result
 ---

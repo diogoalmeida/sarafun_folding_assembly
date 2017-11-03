@@ -19,32 +19,60 @@ FoldingController::~FoldingController() {}
 
 bool FoldingController::init()
 {
-  std::string base_link;
+  std::string base_link, rod_gripping_frame, surface_gripping_frame;
   if (!nh_.getParam("kinematic_chain_base_link", base_link))
   {
     ROS_ERROR("Missing kinematic_chain_base_link parameter");
     return false;
   }
 
+  // Initialize arms and set gripping points.
   kdl_manager_.reset(new generic_control_toolbox::KDLManager(base_link));
 }
 
 sensor_msgs::JointState FoldingController::controlAlgorithm(const sensor_msgs::JointState &current_state, const ros::Duration &dt)
 {
   sensor_msgs::JointState ret;
+  Eigen::Vector3d pc_est;
+  KDL::Frame rod_eef_pose, surface_eef_pose;
 
   return ret;
 }
 
+bool FoldingController::setArm(const generic_control_toolbox::ArmInfo &msg)
+{
+    if(!kdl_manager_->initializeArm(msg.kdl_eef_frame))
+    {
+      return false;
+    }
+
+    if (!kdl_manager_->setGrippingPoint(msg.kdl_eef_frame, msg.gripping_frame))
+    {
+      return false;
+    }
+}
+
 bool FoldingController::parseGoal(boost::shared_ptr<const FoldingControllerGoal> goal)
 {
+  rod_eef_ = goal->rod_arm.kdl_eef_frame;
+  surface_eef_ = goal->surface_arm.kdl_eef_frame;
   try
   {
-    ects_controller_.reset(new folding_algorithms::ECTSController(goal->rod_eef, goal->surface_eef, kdl_manager_));
+    ects_controller_.reset(new folding_algorithms::ECTSController(rod_eef_, surface_eef_, kdl_manager_));
   }
   catch(std::logic_error &e)
   {
     ROS_ERROR("Exception when initializing the ECTS controller: %s.", e.what());
+    return false;
+  }
+
+  if (!setArm(goal->rod_arm))
+  {
+    return false;
+  }
+
+  if (!setArm(goal->surface_arm))
+  {
     return false;
   }
 
@@ -58,12 +86,6 @@ void FoldingController::resetController()
 
 int main(int argc, char ** argv)
 {
-  folding_algorithms::KalmanEstimator kalman_filter;
-  folding_algorithms::FoldingPoseController pose_controller;
-  folding_algorithms::AdaptiveController adaptive_velocity_controller;
-  generic_control_toolbox::KDLManager kdl_manager("blah");
-  generic_control_toolbox::WrenchManager wrench_manager;
-  folding_algorithms::ECTSController ects_controller("rod", "surface", std::shared_ptr<generic_control_toolbox::KDLManager>(&kdl_manager));
   FoldingController controller("action_name");
   return 0;
 }

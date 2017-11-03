@@ -36,7 +36,16 @@ private:
   **/
   bool init();
 
+  /**
+    Initializes the manager classes with the given arm info.
+
+    @param msg The arm info message for one arm.
+    @return False if something goes wrong, true otherwise.
+  **/
+  bool setArm(const generic_control_toolbox::ArmInfo &msg);
+
   ros::NodeHandle nh_;
+  std::string rod_eef_, surface_eef_;
   folding_algorithms::KalmanEstimator kalman_filter_;
   folding_algorithms::FoldingPoseController pose_controller_;
   folding_algorithms::AdaptiveController adaptive_velocity_controller_;
