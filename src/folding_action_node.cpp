@@ -35,15 +35,28 @@ bool FoldingController::init()
 sensor_msgs::JointState FoldingController::controlAlgorithm(const sensor_msgs::JointState &current_state, const ros::Duration &dt)
 {
   sensor_msgs::JointState ret;
-  KDL::Frame p1, p2, pc_est;
+  KDL::Frame p1, p2;
+  Eigen::Affine3d p1_eig, p2_eig, pc_est;
 
   kdl_manager_->getGrippingPoint(rod_eef_, current_state, p1);
   kdl_manager_->getGrippingPoint(surface_eef_, current_state, p2);
+  tf::transformKDLToEigen(p1, p1_eig);
+  tf::transformKDLToEigen(p2, p2_eig);
 
   if (!has_init_)
   {
-
+    pc_est.translation() = p2_eig.translation();
+    kalman_filter_.initialize(pc_est.translation());
   }
+
+  KDL::Twist v1;
+  Eigen::Matrix<double, 6, 1> v1_eig, wrench2;
+  kdl_manager_->getGrippingTwist(rod_eef_, current_state, v1);
+  wrench_manager_.wrenchAtGrippingPoint(surface_eef_, wrench2);
+  tf::twistKDLToEigen(v1, v1_eig);
+
+  pc_est.linear() = p1_eig.linear();
+  pc_est.translation() = kalman_filter_.estimate(p1_eig.translation(), v1_eig, p2_eig.translation(), wrench2, dt.toSec());
 
   return ret;
 }
