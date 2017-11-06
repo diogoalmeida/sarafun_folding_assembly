@@ -23,13 +23,12 @@ int main(int argc, char ** argv)
   sensor_msgs::JointState command;
   got_first = false;
 
-  sleep(1.0);
-
   while(ros::ok())
   {
+    ros::spinOnce();
     if (got_first)
     {
-      command = controller.controlAlgorithm(state, ros::Time::now() - prev_time);
+      command = controller.updateControl(state, ros::Time::now() - prev_time);
       state_pub.publish(command);
     }
     else

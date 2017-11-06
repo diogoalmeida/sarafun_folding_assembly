@@ -24,12 +24,12 @@ namespace folding_assembly_controller
   public:
     FoldingController(const std::string &action_name);
     virtual ~FoldingController();
-    sensor_msgs::JointState controlAlgorithm(const sensor_msgs::JointState &current_state, const ros::Duration &dt);
 
   private:
     bool parseGoal(boost::shared_ptr<const FoldingControllerGoal> goal);
     void resetController();
 
+    sensor_msgs::JointState controlAlgorithm(const sensor_msgs::JointState &current_state, const ros::Duration &dt);
     /**
       Get the required parameters for initializing the folding controller
       elements.

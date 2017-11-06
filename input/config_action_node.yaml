@@ -1,0 +1,7 @@
+kinematic_chain_base_link: yumi_base_link
+
+kf_estimator:
+  Q:
+    data: [0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01]
+  R:
+    data: [0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01]

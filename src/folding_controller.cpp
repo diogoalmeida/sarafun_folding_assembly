@@ -30,6 +30,7 @@ namespace folding_assembly_controller
 
     // Initialize arms and set gripping points.
     kdl_manager_.reset(new generic_control_toolbox::KDLManager(base_link));
+    return true;
   }
 
   sensor_msgs::JointState FoldingController::controlAlgorithm(const sensor_msgs::JointState &current_state, const ros::Duration &dt)

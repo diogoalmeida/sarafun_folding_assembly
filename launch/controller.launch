@@ -4,6 +4,10 @@
     <rosparam command="load" file="$(find folding_assembly_controller)/input/config_mux.yaml"/>
   </node>
 
+  <node name="folding_controller" pkg="folding_assembly_controller" type="folding_action_node" output="screen">
+    <rosparam command="load" file="$(find folding_assembly_controller)/input/config_action_node.yaml"/>
+    <remap from="joint_states" to="yumi/joint_states"/>
+  </node>
   <!-- <arg name="simmode"  default="false" />
   <arg name="rvizconfig" default="$(find folding_assembly_controller)/rviz_abb.rviz" />
   <arg name="test_estimator" default="false" />
