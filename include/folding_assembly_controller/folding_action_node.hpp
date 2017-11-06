@@ -11,6 +11,7 @@
 #include <folding_assembly_controller/pose_controller.hpp>
 #include <folding_assembly_controller/FoldingControllerAction.h>
 #include <folding_assembly_controller/AdaptiveController.h>
+#include <folding_assembly_controller/PoseGoal.h>
 #include <folding_assembly_controller/adaptive_velocity_controller.hpp>
 
 using namespace folding_assembly_controller;
@@ -53,6 +54,7 @@ private:
   std::shared_ptr<generic_control_toolbox::KDLManager> kdl_manager_;
   generic_control_toolbox::WrenchManager wrench_manager_;
   std::shared_ptr<folding_algorithms::ECTSController> ects_controller_;
+  double pc_goal_, thetac_goal_;
   bool has_init_;
 };
 #endif

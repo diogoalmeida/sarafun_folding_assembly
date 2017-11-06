@@ -26,6 +26,7 @@ link_directories(${catkin_LIBRARY_DIRS})
 add_message_files(
   FILES
 	AdaptiveController.msg
+	PoseGoal.msg
 )
 
 add_action_files(
