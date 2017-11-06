@@ -58,6 +58,7 @@ set(
   src/ects.cpp
   src/adaptive_velocity_controller.cpp
   src/pose_controller.cpp
+	src/folding_controller.cpp
 )
 
 add_executable(folding_action_node src/folding_action_node.cpp ${dependencies})
