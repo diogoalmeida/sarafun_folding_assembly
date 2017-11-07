@@ -1,6 +1,4 @@
 # Goal
-generic_control_toolbox/ArmInfo rod_arm
-generic_control_toolbox/ArmInfo surface_arm
 folding_assembly_controller/AdaptiveController adaptive_params
 folding_assembly_controller/PoseGoal pose_goal
 ---

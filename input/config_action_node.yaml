@@ -1,7 +1,27 @@
 kinematic_chain_base_link: yumi_base_link
 
+rod_arm:
+  kdl_eef_frame: ""
+  gripping_frame: ""
+  has_ft_sensor: false
+  sensor_frame: ""
+  sensor_topic: ""
+
+surface_arm:
+  kdl_eef_frame: ""
+  gripping_frame: ""
+  has_ft_sensor: false
+  sensor_frame: ""
+  sensor_topic: ""
+
 kf_estimator:
   Q:
     data: [0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01]
   R:
     data: [0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01]
+
+pose_controller:
+  vd_max: 0.01
+  wd_max: 0.05
+  position_gain: 1.0
+  orientation_gain: 1.0

@@ -28,6 +28,26 @@ namespace folding_assembly_controller
 
     has_init_ = false; // true if controlAlgorithm has been called after a new goal
 
+    if (!setArm("rod_arm", rod_eef_))
+    {
+      return false;
+    }
+
+    if (!setArm("surface_arm", surface_eef_))
+    {
+      return false;
+    }
+
+    try
+    {
+      ects_controller_.reset(new folding_algorithms::ECTSController(rod_eef_, surface_eef_, kdl_manager_));
+    }
+    catch(std::logic_error &e)
+    {
+      ROS_ERROR("Exception when initializing the ECTS controller: %s.", e.what());
+      return false;
+    }
+
     // Initialize arms and set gripping points.
     kdl_manager_.reset(new generic_control_toolbox::KDLManager(base_link));
     return true;
@@ -79,28 +99,62 @@ namespace folding_assembly_controller
     return ret;
   }
 
-  bool FoldingController::setArm(const generic_control_toolbox::ArmInfo &msg)
+  bool FoldingController::setArm(const std::string &arm_name, std::string &eef_name)
   {
-      if(!kdl_manager_->initializeArm(msg.kdl_eef_frame))
+      generic_control_toolbox::ArmInfo info;
+      bool has_ft_sensor; // HACK: using the boolean in "ArmInfo" gives an rvalue assignment error that I do not understand
+      if (!nh_.getParam(arm_name + "/kdl_eef_frame", info.kdl_eef_frame))
+      {
+        ROS_ERROR("Missing kinematic chain eef (%s/kdl_eef_frame)", arm_name.c_str());
+        return false;
+      }
+
+      eef_name = info.kdl_eef_frame;
+
+      if (!nh_.getParam(arm_name + "/gripping_frame", info.gripping_frame))
+      {
+        ROS_ERROR("Missing kinematic gripping_frame (%s/gripping_frame)", arm_name.c_str());
+        return false;
+      }
+
+      if (!nh_.getParam(arm_name + "/has_ft_sensor", has_ft_sensor))
+      {
+        ROS_ERROR("Missing sensor info (%s/has_ft_sensor)", arm_name.c_str());
+        return false;
+      }
+
+      if (!nh_.getParam(arm_name + "/sensor_frame", info.sensor_frame))
+      {
+        ROS_ERROR("Missing sensor info (%s/sensor_frame)", arm_name.c_str());
+        return false;
+      }
+
+      if (!nh_.getParam(arm_name + "/sensor_topic", info.sensor_topic))
+      {
+        ROS_ERROR("Missing sensor info (%s/sensor_topic)", arm_name.c_str());
+        return false;
+      }
+
+      if(!kdl_manager_->initializeArm(info.kdl_eef_frame))
       {
         return false;
       }
 
-      if (!kdl_manager_->setGrippingPoint(msg.kdl_eef_frame, msg.gripping_frame))
+      if (!kdl_manager_->setGrippingPoint(info.kdl_eef_frame, info.gripping_frame))
       {
         return false;
       }
 
-      if (msg.has_ft_sensor)
+      if (has_ft_sensor)
       {
-        if (!wrench_manager_.initializeWrenchComm(msg.kdl_eef_frame, msg.sensor_frame, msg.gripping_frame, msg.sensor_topic))
+        if (!wrench_manager_.initializeWrenchComm(info.kdl_eef_frame, info.sensor_frame, info.gripping_frame, info.sensor_topic))
         {
           return false;
         }
       }
       else
       {
-        ROS_WARN("End-effector %s has no F/T sensor.", msg.kdl_eef_frame.c_str());
+        ROS_WARN("End-effector %s has no F/T sensor.", info.kdl_eef_frame.c_str());
       }
 
       return true;
@@ -108,40 +162,11 @@ namespace folding_assembly_controller
 
   bool FoldingController::parseGoal(boost::shared_ptr<const FoldingControllerGoal> goal)
   {
-    rod_eef_ = goal->rod_arm.kdl_eef_frame;
-    surface_eef_ = goal->surface_arm.kdl_eef_frame;
-
-    if (!goal->rod_arm.has_ft_sensor && !goal->surface_arm.has_ft_sensor)
-    {
-      ROS_ERROR("At least one arm must have a F/T sensor");
-      return false;
-    }
-
-    try
-    {
-      ects_controller_.reset(new folding_algorithms::ECTSController(rod_eef_, surface_eef_, kdl_manager_));
-    }
-    catch(std::logic_error &e)
-    {
-      ROS_ERROR("Exception when initializing the ECTS controller: %s.", e.what());
-      return false;
-    }
-
     Eigen::Vector3d t_init, k_init;
     adaptive_velocity_controller_.setReferenceForce(goal->adaptive_params.goal_force);
     t_init << cos(goal->adaptive_params.init_t_error), 0, sin(goal->adaptive_params.init_t_error);
     k_init << cos(goal->adaptive_params.init_k_error), 0, sin(goal->adaptive_params.init_k_error);
     adaptive_velocity_controller_.initEstimates(t_init, k_init);
-
-    if (!setArm(goal->rod_arm))
-    {
-      return false;
-    }
-
-    if (!setArm(goal->surface_arm))
-    {
-      return false;
-    }
 
     pc_goal_ = goal->pose_goal.pd;
     thetac_goal_ = goal->pose_goal.thetad;

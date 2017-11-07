@@ -6,6 +6,7 @@
 #include <generic_control_toolbox/kdl_manager.hpp>
 #include <generic_control_toolbox/wrench_manager.hpp>
 #include <generic_control_toolbox/controller_template.hpp>
+#include <generic_control_toolbox/ArmInfo.h>
 #include <folding_assembly_controller/ects.hpp>
 #include <folding_assembly_controller/kalman_filter.hpp>
 #include <folding_assembly_controller/pose_controller.hpp>
@@ -41,10 +42,11 @@ namespace folding_assembly_controller
     /**
       Initializes the manager classes with the given arm info.
 
-      @param msg The arm info message for one arm.
+      @param arm_name The arm name in the parameter server.
+      @param eef_name Arm's kinematic chain end-effector name.
       @return False if something goes wrong, true otherwise.
     **/
-    bool setArm(const generic_control_toolbox::ArmInfo &msg);
+    bool setArm(const std::string &arm_name, std::string &eef_name);
 
     ros::NodeHandle nh_;
     std::string rod_eef_, surface_eef_;
