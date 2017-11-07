@@ -6,6 +6,7 @@ bool got_first;
 
 void jointStatesCb(const sensor_msgs::JointState::ConstPtr &msg)
 {
+  ROS_INFO_ONCE("Joint state received!");
   state = *msg;
   got_first = true;
 }
@@ -17,7 +18,7 @@ int main(int argc, char ** argv)
   folding_assembly_controller::FoldingController controller("action_name");
 
   ros::Subscriber joint_state_sub = n.subscribe("/joint_states", 1000, jointStatesCb);
-  ros::Publisher state_pub = n.advertise<sensor_msgs::JointState>("/joint_command", 1000);
+  ros::Publisher state_pub = n.advertise<sensor_msgs::JointState>("/yumi/joint_command", 1000);
   ros::Rate loop_rate(250);
   ros::Time prev_time = ros::Time::now();
   sensor_msgs::JointState command;
@@ -33,7 +34,7 @@ int main(int argc, char ** argv)
     }
     else
     {
-      ROS_WARN("No joint state received");
+      ROS_WARN_ONCE("No joint state received");
     }
     prev_time = ros::Time::now();
     loop_rate.sleep();

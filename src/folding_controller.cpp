@@ -28,6 +28,9 @@ namespace folding_assembly_controller
 
     has_init_ = false; // true if controlAlgorithm has been called after a new goal
 
+    // Initialize arms and set gripping points.
+    kdl_manager_ = std::make_shared<generic_control_toolbox::KDLManager>(base_link);
+
     if (!setArm("rod_arm", rod_eef_))
     {
       return false;
@@ -40,7 +43,7 @@ namespace folding_assembly_controller
 
     try
     {
-      ects_controller_.reset(new folding_algorithms::ECTSController(rod_eef_, surface_eef_, kdl_manager_));
+      ects_controller_ = std::make_shared<folding_algorithms::ECTSController>(rod_eef_, surface_eef_, kdl_manager_);
     }
     catch(std::logic_error &e)
     {
@@ -48,8 +51,6 @@ namespace folding_assembly_controller
       return false;
     }
 
-    // Initialize arms and set gripping points.
-    kdl_manager_.reset(new generic_control_toolbox::KDLManager(base_link));
     return true;
   }
 
@@ -103,6 +104,7 @@ namespace folding_assembly_controller
   {
       generic_control_toolbox::ArmInfo info;
       bool has_ft_sensor; // HACK: using the boolean in "ArmInfo" gives an rvalue assignment error that I do not understand
+
       if (!nh_.getParam(arm_name + "/kdl_eef_frame", info.kdl_eef_frame))
       {
         ROS_ERROR("Missing kinematic chain eef (%s/kdl_eef_frame)", arm_name.c_str());
@@ -156,6 +158,8 @@ namespace folding_assembly_controller
       {
         ROS_WARN("End-effector %s has no F/T sensor.", info.kdl_eef_frame.c_str());
       }
+
+      ROS_DEBUG("Successfully set up arm %s with eef_frame %s, gripping_frame %s sensor frame %s and sensor topic %s", arm_name.c_str(), info.kdl_eef_frame.c_str(), info.gripping_frame.c_str(), info.sensor_frame.c_str(), info.sensor_topic.c_str());
 
       return true;
   }

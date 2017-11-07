@@ -54,7 +54,7 @@ namespace folding_algorithms{
       throw std::logic_error(errMsg.str().c_str());
     }
 
-    if(wrench.rows() != Q_.rows() || wrench.rows() != Q_.cols())
+    if(wrench.rows()/2 != Q_.rows() || wrench.rows()/2 != Q_.cols())
     {
       std::stringstream errMsg;
       errMsg << "Q matrix is not compatible with the received wrench (got: <" << Q_.rows() << "," << Q_.cols() << "> and wrench vector is size "<< wrench.rows() << ")";
