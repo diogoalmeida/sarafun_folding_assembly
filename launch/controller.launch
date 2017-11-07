@@ -1,13 +1,27 @@
 <?xml version="1.0"?>
 <launch>
-  <node name="joint_mux" pkg="folding_assembly_controller" type="joint_command_mux.py" output="screen">
-    <rosparam command="load" file="$(find folding_assembly_controller)/input/config_mux.yaml"/>
-  </node>
+  <arg name="debug" default="false" />
 
-  <node name="folding_controller" pkg="folding_assembly_controller" type="folding_action_node" output="screen">
-    <rosparam command="load" file="$(find folding_assembly_controller)/input/config_action_node.yaml"/>
-    <remap from="joint_states" to="yumi/joint_states"/>
-  </node>
+  <group if="$(arg debug)">
+    <env name="ROSCONSOLE_CONFIG_FILE" value="$(find folding_assembly_controller)/config/logger.config"/>
+    <node name="joint_mux" pkg="folding_assembly_controller" type="joint_command_mux.py" output="screen">
+      <rosparam command="load" file="$(find folding_assembly_controller)/input/config_mux.yaml"/>
+    </node>
+    <node name="folding_controller" pkg="folding_assembly_controller" type="folding_action_node" output="screen" launch-prefix="xterm -e gdb -ex run --args">
+      <rosparam command="load" file="$(find folding_assembly_controller)/input/config_action_node.yaml"/>
+      <remap from="joint_states" to="yumi/joint_states"/>
+    </node>
+  </group>
+
+  <group unless="$(arg debug)">
+    <node name="joint_mux" pkg="folding_assembly_controller" type="joint_command_mux.py" output="screen">
+      <rosparam command="load" file="$(find folding_assembly_controller)/input/config_mux.yaml"/>
+    </node>
+    <node name="folding_controller" pkg="folding_assembly_controller" type="folding_action_node" output="screen">
+      <rosparam command="load" file="$(find folding_assembly_controller)/input/config_action_node.yaml"/>
+      <remap from="joint_states" to="yumi/joint_states"/>
+    </node>
+  </group>
   <!-- <arg name="simmode"  default="false" />
   <arg name="rvizconfig" default="$(find folding_assembly_controller)/rviz_abb.rviz" />
   <arg name="test_estimator" default="false" />
