@@ -85,11 +85,21 @@ namespace folding_assembly_controller
     Eigen::Matrix<double, 6, 1> relative_twist;
     double pc_proj, theta_proj, vd = 0, wd = 0;
     adaptive_velocity_controller_.getEstimates(t_est, k_est);
-    pc_proj = (pc_est.translation() - p2_eig.translation()).dot(t_est);
     r1 = pc_est.translation() - p1_eig.translation();
     r2 = pc_est.translation() - p2_eig.translation();
-    theta_proj = acos(r1.dot(t_est))/r1.norm();
-    pose_controller_.computeControl(pc_proj, theta_proj, pc_goal_, thetac_goal_, vd, wd);
+
+    if (pose_goal_)
+    {
+      pc_proj = (pc_est.translation() - p2_eig.translation()).dot(t_est);
+      theta_proj = acos(r1.dot(t_est))/r1.norm();
+      pose_controller_.computeControl(pc_proj, theta_proj, pc_goal_, thetac_goal_, vd, wd);
+    }
+    else
+    {
+      vd = vd_;
+      wd = wd_;
+    }
+
     relative_twist = adaptive_velocity_controller_.control(wrench2, vd, wd, dt.toSec());
 
     Eigen::Matrix<double, 14, 1> qdot;
@@ -172,8 +182,20 @@ namespace folding_assembly_controller
     k_init << cos(goal->adaptive_params.init_k_error), 0, sin(goal->adaptive_params.init_k_error);
     adaptive_velocity_controller_.initEstimates(t_init, k_init);
 
-    pc_goal_ = goal->pose_goal.pd;
-    thetac_goal_ = goal->pose_goal.thetad;
+    if (goal->use_pose_goal)
+    {
+      ROS_INFO("Using pose goal");
+      pose_goal_ = true;
+      pc_goal_ = goal->pose_goal.pd;
+      thetac_goal_ = goal->pose_goal.thetad;
+    }
+    else
+    {
+      ROS_INFO("Using velocity goal");
+      pose_goal_ = false;
+      vd_ = goal->velocity_goal.vd;
+      wd_ = goal->velocity_goal.wd;
+    }
 
     return true;
   }

@@ -1,6 +1,8 @@
 # Goal
 folding_assembly_controller/AdaptiveController adaptive_params
+bool use_pose_goal
 folding_assembly_controller/PoseGoal pose_goal
+folding_assembly_controller/VelocityGoal velocity_goal
 ---
 # Result
 ---

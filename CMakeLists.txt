@@ -27,6 +27,7 @@ add_message_files(
   FILES
 	AdaptiveController.msg
 	PoseGoal.msg
+  VelocityGoal.msg
 )
 
 add_action_files(

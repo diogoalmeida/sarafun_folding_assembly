@@ -56,8 +56,8 @@ namespace folding_assembly_controller
     std::shared_ptr<generic_control_toolbox::KDLManager> kdl_manager_;
     generic_control_toolbox::WrenchManager wrench_manager_;
     std::shared_ptr<folding_algorithms::ECTSController> ects_controller_;
-    double pc_goal_, thetac_goal_;
-    bool has_init_;
+    double pc_goal_, thetac_goal_, vd_, wd_;
+    bool has_init_, pose_goal_;
   };
 }
 #endif
