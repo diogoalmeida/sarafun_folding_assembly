@@ -182,6 +182,5 @@ namespace folding_assembly_controller
   {
     has_init_ = false;
     adaptive_velocity_controller_.reset();
-    kdl_manager_.reset();
   }
 }
