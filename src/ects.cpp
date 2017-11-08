@@ -7,6 +7,11 @@ namespace folding_algorithms{
   kdl_manager_ = kdl_manager;
   rod_eef_ = rod_eef;
   surface_eef_ = surface_eef;
+
+  if (!getParams())
+  {
+    throw std::logic_error("ECTS controller failed to initialize");
+  }
 }
 
 ECTSController::~ECTSController(){}
@@ -97,12 +102,7 @@ bool ECTSController::getParams()
     return false;
   }
 
-  if (alpha_ < 0 || alpha_ > 1)
-  {
-    std::stringstream errMsg;
-    errMsg << "Got alpha " << alpha_ << ", must be within the range [0, 1]";
-    throw std::logic_error(errMsg.str().c_str());
-  }
+  setAlpha(alpha_);
 
   if (beta_ != 0 && beta_ != 1)
   {
