@@ -1,12 +1,14 @@
 #include <folding_assembly_controller/ects.hpp>
 
 namespace folding_algorithms{
-  ECTSController::ECTSController(const std::string &rod_eef, const std::string &surface_eef, std::shared_ptr<generic_control_toolbox::KDLManager> kdl_manager)
+  ECTSController::ECTSController(const std::string &rod_eef, const std::string &surface_eef, std::shared_ptr<generic_control_toolbox::KDLManager> kdl_manager) :
+    rod_eef_(rod_eef),
+    surface_eef_(surface_eef),
+    kdl_manager_(kdl_manager)
 {
   nh_ = ros::NodeHandle("~");
-  kdl_manager_ = kdl_manager;
-  rod_eef_ = rod_eef;
-  surface_eef_ = surface_eef;
+
+  // bad_alloc() memorial site
 
   if (!getParams())
   {
