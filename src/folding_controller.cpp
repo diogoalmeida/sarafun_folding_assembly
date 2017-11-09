@@ -54,8 +54,11 @@ namespace folding_assembly_controller
     // Initialize markers
     marker_manager_.reset(new generic_control_toolbox::MarkerManager(nh_, "folding_markers"));
     marker_manager_->addMarker("translational_estimate", "folding_assembly", base_link, generic_control_toolbox::MarkerType::arrow);
+    marker_manager_->setMarkerColor("translational_estimate", 1, 0, 0);
     marker_manager_->addMarker("rotational_estimate", "folding_assembly", base_link, generic_control_toolbox::MarkerType::arrow);
+    marker_manager_->setMarkerColor("rotational_estimate", 0, 1, 0);
     marker_manager_->addMarker("contact_point_estimate", "folding_assembly", base_link, generic_control_toolbox::MarkerType::sphere);
+    marker_manager_->setMarkerColor("contact_point_estimate", 0, 0, 1);
     return true;
   }
 
@@ -69,13 +72,6 @@ namespace folding_assembly_controller
     kdl_manager_->getGrippingPoint(surface_eef_, current_state, p2);
     tf::transformKDLToEigen(p1, p1_eig);
     tf::transformKDLToEigen(p2, p2_eig);
-
-    if (!has_init_)
-    {
-      pc_est.translation() = p2_eig.translation();
-      kalman_filter_.initialize(pc_est.translation());
-      has_init_ = true;
-    }
 
     KDL::Twist v1, v2;
     Eigen::Matrix<double, 6, 1> v1_eig, wrench2;
@@ -91,8 +87,8 @@ namespace folding_assembly_controller
     Eigen::Matrix<double, 6, 1> relative_twist;
     double pc_proj, theta_proj, vd = 0, wd = 0;
     adaptive_velocity_controller_.getEstimates(t_est, k_est);
-    marker_manager_->setMarkerPoints("translational_estimate", p2_eig.translation(), p2_eig.translation() + 0.01*t_est);
-    marker_manager_->setMarkerPoints("rotational_estimate", p2_eig.translation(), p2_eig.translation() + 0.01*k_est);
+    marker_manager_->setMarkerPoints("translational_estimate", pc_est.translation(), pc_est.translation() + 0.1*t_est);
+    marker_manager_->setMarkerPoints("rotational_estimate", pc_est.translation(), pc_est.translation() + 0.1*k_est);
     r1 = pc_est.translation() - p1_eig.translation();
     r2 = pc_est.translation() - p2_eig.translation();
 
@@ -188,7 +184,7 @@ namespace folding_assembly_controller
     Eigen::Vector3d t_init, k_init;
     adaptive_velocity_controller_.setReferenceForce(goal->adaptive_params.goal_force);
     t_init << cos(goal->adaptive_params.init_t_error), 0, sin(goal->adaptive_params.init_t_error);
-    k_init << cos(goal->adaptive_params.init_k_error), 0, sin(goal->adaptive_params.init_k_error);
+    k_init << 0, cos(goal->adaptive_params.init_k_error), sin(goal->adaptive_params.init_k_error);
     adaptive_velocity_controller_.initEstimates(t_init, k_init);
 
     if (goal->use_pose_goal)
@@ -205,6 +201,12 @@ namespace folding_assembly_controller
       vd_ = goal->velocity_goal.vd;
       wd_ = goal->velocity_goal.wd;
     }
+
+    KDL::Frame p2;
+    Eigen::Affine3d p2_eig;
+    kdl_manager_->getGrippingPoint(surface_eef_, lastState(sensor_msgs::JointState()), p2);
+    tf::transformKDLToEigen(p2, p2_eig);
+    kalman_filter_.initialize(p2_eig.translation());
 
     return true;
   }
