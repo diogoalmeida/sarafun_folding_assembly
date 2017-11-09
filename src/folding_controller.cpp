@@ -43,7 +43,7 @@ namespace folding_assembly_controller
 
     try
     {
-      ects_controller_ = std::make_shared<folding_algorithms::ECTSController>(rod_eef_, surface_eef_, kdl_manager_);
+      ects_controller_.reset(new folding_algorithms::ECTSController(rod_eef_, surface_eef_, kdl_manager_));
     }
     catch(std::logic_error &e)
     {
@@ -51,6 +51,11 @@ namespace folding_assembly_controller
       return false;
     }
 
+    // Initialize markers
+    marker_manager_.reset(new generic_control_toolbox::MarkerManager(nh_, "folding_markers"));
+    marker_manager_->addMarker("translational_estimate", "folding_assembly", base_link, generic_control_toolbox::MarkerType::arrow);
+    marker_manager_->addMarker("rotational_estimate", "folding_assembly", base_link, generic_control_toolbox::MarkerType::arrow);
+    marker_manager_->addMarker("contact_point_estimate", "folding_assembly", base_link, generic_control_toolbox::MarkerType::sphere);
     return true;
   }
 
@@ -80,11 +85,14 @@ namespace folding_assembly_controller
 
     pc_est.linear() = p1_eig.linear();
     pc_est.translation() = kalman_filter_.estimate(p1_eig.translation(), v1_eig, p2_eig.translation(), wrench2, dt.toSec());
+    marker_manager_->setMarkerPose("contact_point_estimate", pc_est);
 
     Eigen::Vector3d t_est, k_est, r1, r2;
     Eigen::Matrix<double, 6, 1> relative_twist;
     double pc_proj, theta_proj, vd = 0, wd = 0;
     adaptive_velocity_controller_.getEstimates(t_est, k_est);
+    marker_manager_->setMarkerPoints("translational_estimate", p2_eig.translation(), p2_eig.translation() + 0.01*t_est);
+    marker_manager_->setMarkerPoints("rotational_estimate", p2_eig.translation(), p2_eig.translation() + 0.01*k_est);
     r1 = pc_est.translation() - p1_eig.translation();
     r2 = pc_est.translation() - p2_eig.translation();
 
@@ -106,6 +114,7 @@ namespace folding_assembly_controller
     qdot = ects_controller_->control(current_state, r1, r2, Eigen::Matrix<double, 6, 1>::Zero(), relative_twist);
     kdl_manager_->getJointState(rod_eef_, qdot.block<7, 1>(0, 0), ret);
     kdl_manager_->getJointState(surface_eef_, qdot.block<7,1>(7, 0), ret);
+    marker_manager_->publishMarkers();
 
     return ret;
   }
