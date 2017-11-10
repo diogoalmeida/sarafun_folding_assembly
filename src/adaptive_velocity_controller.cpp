@@ -13,6 +13,11 @@ namespace folding_algorithms{
     max_force_ = 0;
     max_torque_ = 0;
     nh_ = ros::NodeHandle("~");
+
+    if (!getParams())
+    {
+      throw std::logic_error("Adaptive velocity controller missing initialization parameters");
+    }
   }
 
   AdaptiveController::~AdaptiveController(){}

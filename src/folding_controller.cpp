@@ -183,7 +183,7 @@ namespace folding_assembly_controller
   {
     Eigen::Vector3d t_init, k_init;
     adaptive_velocity_controller_.setReferenceForce(goal->adaptive_params.goal_force);
-    t_init << cos(goal->adaptive_params.init_t_error), 0, sin(goal->adaptive_params.init_t_error);
+    t_init << sin(goal->adaptive_params.init_t_error), 0, cos(goal->adaptive_params.init_t_error);
     k_init << 0, cos(goal->adaptive_params.init_k_error), sin(goal->adaptive_params.init_k_error);
     adaptive_velocity_controller_.initEstimates(t_init, k_init);
 
