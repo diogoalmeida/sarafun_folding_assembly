@@ -27,7 +27,7 @@ pose_controller:
   orientation_gain: 1.0
 
 ects_controller:
-  alpha: 1.0
+  alpha: 0.5
   beta: 1
   inverse_damping: 0.001
 

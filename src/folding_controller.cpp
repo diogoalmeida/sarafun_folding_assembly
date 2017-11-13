@@ -52,13 +52,18 @@ namespace folding_assembly_controller
     }
 
     // Initialize markers
-    marker_manager_.reset(new generic_control_toolbox::MarkerManager(nh_, "folding_markers"));
-    marker_manager_->addMarker("translational_estimate", "folding_assembly", base_link, generic_control_toolbox::MarkerType::arrow);
-    marker_manager_->setMarkerColor("translational_estimate", 1, 0, 0);
-    marker_manager_->addMarker("rotational_estimate", "folding_assembly", base_link, generic_control_toolbox::MarkerType::arrow);
-    marker_manager_->setMarkerColor("rotational_estimate", 0, 1, 0);
-    marker_manager_->addMarker("contact_point_estimate", "folding_assembly", base_link, generic_control_toolbox::MarkerType::sphere);
-    marker_manager_->setMarkerColor("contact_point_estimate", 0, 0, 1);
+    marker_manager_.addMarkerGroup("estimates", "folding_markers/estimates");
+    marker_manager_.addMarkerGroup("sticks", "folding_markers/sticks");
+    marker_manager_.addMarker("estimates", "translational_estimate", "folding_assembly", base_link, generic_control_toolbox::MarkerType::arrow);
+    marker_manager_.setMarkerColor("estimates", "translational_estimate", 1, 0, 0);
+    marker_manager_.addMarker("estimates", "rotational_estimate", "folding_assembly", base_link, generic_control_toolbox::MarkerType::arrow);
+    marker_manager_.setMarkerColor("estimates", "rotational_estimate", 0, 1, 0);
+    marker_manager_.addMarker("estimates", "contact_point_estimate", "folding_assembly", base_link, generic_control_toolbox::MarkerType::sphere);
+    marker_manager_.setMarkerColor("estimates", "contact_point_estimate", 0, 0, 1);
+    marker_manager_.addMarker("sticks", "r1", "folding_assembly", base_link, generic_control_toolbox::MarkerType::arrow);
+    marker_manager_.setMarkerColor("sticks", "r1", 1, 0, 0);
+    marker_manager_.addMarker("sticks", "r2", "folding_assembly", base_link, generic_control_toolbox::MarkerType::arrow);
+    marker_manager_.setMarkerColor("sticks", "r2", 0, 1, 0);
     return true;
   }
 
@@ -81,16 +86,28 @@ namespace folding_assembly_controller
 
     pc_est.linear() = p1_eig.linear();
     pc_est.translation() = kalman_filter_.estimate(p1_eig.translation(), v1_eig, p2_eig.translation(), wrench2, dt.toSec());
-    marker_manager_->setMarkerPose("contact_point_estimate", pc_est);
+    marker_manager_.setMarkerPose("estimates", "contact_point_estimate", pc_est);
 
     Eigen::Vector3d t_est, k_est, r1, r2;
     Eigen::Matrix<double, 6, 1> relative_twist;
     double pc_proj, theta_proj, vd = 0, wd = 0;
+    KDL::Frame sensor_to_base;
+    KDL::Vector t_est_kdl, k_est_kdl;
+
+    kdl_manager_->getSensorPoint(surface_eef_, current_state, sensor_to_base);
     adaptive_velocity_controller_.getEstimates(t_est, k_est);
-    marker_manager_->setMarkerPoints("translational_estimate", pc_est.translation(), pc_est.translation() + 0.1*t_est);
-    marker_manager_->setMarkerPoints("rotational_estimate", pc_est.translation(), pc_est.translation() + 0.1*k_est);
+    tf::vectorEigenToKDL(t_est, t_est_kdl);
+    tf::vectorEigenToKDL(k_est, k_est_kdl);
+    t_est_kdl = sensor_to_base.M*t_est_kdl; // Convert motion estimates to base frame
+    k_est_kdl = sensor_to_base.M*k_est_kdl;
+    tf::vectorKDLToEigen(t_est_kdl, t_est);
+    tf::vectorKDLToEigen(k_est_kdl, k_est);
+    marker_manager_.setMarkerPoints("estimates", "translational_estimate", pc_est.translation(), pc_est.translation() + 0.1*t_est);
+    marker_manager_.setMarkerPoints("estimates", "rotational_estimate", pc_est.translation(), pc_est.translation() + 0.1*k_est);
     r1 = pc_est.translation() - p1_eig.translation();
     r2 = pc_est.translation() - p2_eig.translation();
+    marker_manager_.setMarkerPoints("sticks", "r1", p1_eig.translation(), pc_est.translation());
+    marker_manager_.setMarkerPoints("sticks", "r2", p2_eig.translation(), pc_est.translation());
 
     if (pose_goal_)
     {
@@ -104,13 +121,17 @@ namespace folding_assembly_controller
       wd = wd_;
     }
 
+    KDL::Twist relative_twist_kdl;
     relative_twist = adaptive_velocity_controller_.control(wrench2, vd, wd, dt.toSec());
+    tf::twistEigenToKDL(relative_twist, relative_twist_kdl);
+    relative_twist_kdl = sensor_to_base.M*relative_twist_kdl;
+    tf::twistKDLToEigen(relative_twist_kdl, relative_twist);
 
     Eigen::Matrix<double, 14, 1> qdot;
     qdot = ects_controller_->control(current_state, r1, r2, Eigen::Matrix<double, 6, 1>::Zero(), relative_twist);
     kdl_manager_->getJointState(rod_eef_, qdot.block<7, 1>(0, 0), ret);
     kdl_manager_->getJointState(surface_eef_, qdot.block<7,1>(7, 0), ret);
-    marker_manager_->publishMarkers();
+    marker_manager_.publishMarkers();
 
     return ret;
   }

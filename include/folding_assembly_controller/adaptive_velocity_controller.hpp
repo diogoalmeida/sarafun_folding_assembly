@@ -20,7 +20,7 @@ typedef Eigen::Matrix<double, 6, 1> Vector6d;
 
     /**
       Computes the relative twist reference for the mechanism and updates the
-      estimates.
+      estimates. Results in the wrench frame.
 
       @param wrench Estimation wrench: estimated contact point force and wrench measurement .
       @param v_d The desired linear velocity.
@@ -36,7 +36,7 @@ typedef Eigen::Matrix<double, 6, 1> Vector6d;
     void reset();
 
     /**
-      Initialize the adaptive controller estimates.
+      Initialize the adaptive controller estimates in the wrench frame.
 
       @param t Initial translational DOF estimate.
       @param r Initial rotational DOF estimate.
@@ -51,7 +51,8 @@ typedef Eigen::Matrix<double, 6, 1> Vector6d;
     void setReferenceForce(double f_d);
 
     /**
-      Return the current estimates.
+      Return the current estimates in the wrench frame.
+      
       @param t Current translational DOF estimate.
       @param r Current rotational DOF estimate.
     **/

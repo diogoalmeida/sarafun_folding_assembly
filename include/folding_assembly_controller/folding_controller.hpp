@@ -56,8 +56,8 @@ namespace folding_assembly_controller
     folding_algorithms::AdaptiveController adaptive_velocity_controller_;
     std::shared_ptr<generic_control_toolbox::KDLManager> kdl_manager_;
     generic_control_toolbox::WrenchManager wrench_manager_;
+    generic_control_toolbox::MarkerManager marker_manager_;
     std::unique_ptr<folding_algorithms::ECTSController> ects_controller_;
-    std::unique_ptr<generic_control_toolbox::MarkerManager> marker_manager_;
     double pc_goal_, thetac_goal_, vd_, wd_;
     bool has_init_, pose_goal_;
   };
