@@ -19,14 +19,13 @@ int main(int argc, char ** argv)
 
   ros::Subscriber joint_state_sub = n.subscribe("/joint_states", 1000, jointStatesCb);
   ros::Publisher state_pub = n.advertise<sensor_msgs::JointState>("/yumi/joint_command", 1000);
-  ros::Rate loop_rate(250);
+  ros::Rate loop_rate(100);
   ros::Time prev_time = ros::Time::now();
   sensor_msgs::JointState command;
   got_first = false;
 
   while(ros::ok())
   {
-    ros::spinOnce();
     if (got_first)
     {
       command = controller.updateControl(state, ros::Time::now() - prev_time);
@@ -37,6 +36,7 @@ int main(int argc, char ** argv)
       ROS_WARN_ONCE("No joint state received");
     }
     prev_time = ros::Time::now();
+    ros::spinOnce();
     loop_rate.sleep();
   }
   return 0;
