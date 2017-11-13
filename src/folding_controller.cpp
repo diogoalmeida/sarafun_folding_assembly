@@ -41,6 +41,12 @@ namespace folding_assembly_controller
       return false;
     }
 
+    if (!nh_.getParam("contact_point_offset", contact_offset_))
+    {
+      ROS_ERROR("Missing contact_point_offset parameter");
+      return false;
+    }
+
     try
     {
       ects_controller_.reset(new folding_algorithms::ECTSController(rod_eef_, surface_eef_, kdl_manager_));
@@ -205,7 +211,7 @@ namespace folding_assembly_controller
     Eigen::Vector3d t_init, k_init;
     adaptive_velocity_controller_.setReferenceForce(goal->adaptive_params.goal_force);
     t_init << sin(goal->adaptive_params.init_t_error), 0, cos(goal->adaptive_params.init_t_error);
-    k_init << 0, cos(goal->adaptive_params.init_k_error), sin(goal->adaptive_params.init_k_error);
+    k_init << cos(goal->adaptive_params.init_k_error), sin(goal->adaptive_params.init_k_error), 0;
     adaptive_velocity_controller_.initEstimates(t_init, k_init);
 
     if (goal->use_pose_goal)

@@ -1,4 +1,5 @@
 kinematic_chain_base_link: yumi_base_link
+contact_point_offset: 0.15
 
 rod_arm:
   kdl_eef_frame: "yumi_link_7_l"
