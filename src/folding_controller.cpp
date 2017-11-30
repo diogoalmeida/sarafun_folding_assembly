@@ -71,7 +71,9 @@ namespace folding_assembly_controller
     marker_manager_.addMarker("sticks", "r2", "folding_assembly", base_link, generic_control_toolbox::MarkerType::arrow);
     marker_manager_.setMarkerColor("sticks", "r2", 0, 1, 0);
 
+    dynamic_reconfigure_server_.reset(new dynamic_reconfigure::Server<FoldingConfig>(ros::NodeHandle(ros::this_node::getName() + "/folding_config")));
     dynamic_reconfigure_callback_ = boost::bind(&FoldingController::reconfig, this, _1, _2);
+    dynamic_reconfigure_server_->setCallback(dynamic_reconfigure_callback_);
     return true;
   }
 

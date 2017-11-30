@@ -68,7 +68,7 @@ namespace folding_assembly_controller
     generic_control_toolbox::WrenchManager wrench_manager_;
     generic_control_toolbox::MarkerManager marker_manager_;
     std::unique_ptr<folding_algorithms::ECTSController> ects_controller_;
-    dynamic_reconfigure::Server<FoldingConfig> dynamic_reconfigure_server_;
+    std::shared_ptr<dynamic_reconfigure::Server<FoldingConfig> > dynamic_reconfigure_server_;
     dynamic_reconfigure::Server<FoldingConfig>::CallbackType dynamic_reconfigure_callback_;
     double pc_goal_, thetac_goal_, vd_, wd_, contact_offset_;
     bool has_init_, pose_goal_;
