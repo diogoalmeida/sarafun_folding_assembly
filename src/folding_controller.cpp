@@ -92,6 +92,9 @@ namespace folding_assembly_controller
 
     pc_est.linear() = p1_eig.linear();
     pc_est.translation() = kalman_filter_.estimate(p1_eig.translation(), v1_eig, p2_eig.translation(), wrench2, dt.toSec());
+    // TEMP
+    pc_est.translation() = p1_eig.translation() + contact_offset_*p1_eig.matrix().block<3,1>(0, 2);
+    // end TEMP
     marker_manager_.setMarkerPose("estimates", "contact_point_estimate", pc_est);
 
     Eigen::Vector3d t_est, k_est, r1, r2;
