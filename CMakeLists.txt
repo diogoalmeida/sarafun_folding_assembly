@@ -18,6 +18,7 @@ find_package(
 	abb_irb14000_support
   sarafun_msgs
   generic_control_toolbox
+  dynamic_reconfigure
 )
 
 add_definitions(-std=c++11)
@@ -42,6 +43,10 @@ generate_messages(
   generic_control_toolbox
 )
 
+generate_dynamic_reconfigure_options(
+  config/Folding.cfg
+)
+
 catkin_package(
   CATKIN_DEPENDS message_runtime actionlib_msgs generic_control_toolbox
   INCLUDE_DIRS include
@@ -60,8 +65,8 @@ set(
   src/adaptive_velocity_controller.cpp
   src/pose_controller.cpp
 	src/folding_controller.cpp
-)
+  )
 
 add_executable(folding_action_node src/folding_action_node.cpp ${dependencies})
 target_link_libraries(folding_action_node ${catkin_LIBRARIES})
-add_dependencies(folding_action_node ${catkin_EXPORTED_TARGETS})
+add_dependencies(folding_action_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)

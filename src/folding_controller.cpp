@@ -70,6 +70,8 @@ namespace folding_assembly_controller
     marker_manager_.setMarkerColor("sticks", "r1", 1, 0, 0);
     marker_manager_.addMarker("sticks", "r2", "folding_assembly", base_link, generic_control_toolbox::MarkerType::arrow);
     marker_manager_.setMarkerColor("sticks", "r2", 0, 1, 0);
+
+    dynamic_reconfigure_callback_ = boost::bind(&FoldingController::reconfig, this, _1, _2);
     return true;
   }
 
@@ -239,6 +241,32 @@ namespace folding_assembly_controller
     kalman_filter_.initialize(p2_eig.translation());
 
     return true;
+  }
+
+  void FoldingController::reconfig(FoldingConfig &config, uint32_t level)
+  {
+    if (config.use_values)
+    {
+      pose_goal_ = config.pose_goal;
+      adaptive_velocity_controller_.setReferenceForce(config.desired_contact_force);
+
+      if (config.groups.ects.use_values_ects)
+      {
+        ects_controller_->setAlpha(config.groups.ects.alpha);
+      }
+
+      if (pose_goal_ && config.groups.pose_control.use_values_pose)
+      {
+        pc_goal_ = config.groups.pose_control.translational_offset;
+        thetac_goal_ = config.groups.pose_control.angular_offset;
+      }
+
+      if (!pose_goal_ && config.groups.velocity_control.use_values_velocity)
+      {
+        vd_ = config.groups.velocity_control.translational_velocity;
+        wd_ = config.groups.velocity_control.angular_velocity;
+      }
+    }
   }
 
   void FoldingController::resetController()

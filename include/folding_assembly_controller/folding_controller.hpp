@@ -3,6 +3,7 @@
 
 #include <ros/ros.h>
 #include <stdexcept>
+#include <dynamic_reconfigure/server.h>
 #include <generic_control_toolbox/marker_manager.hpp>
 #include <generic_control_toolbox/kdl_manager.hpp>
 #include <generic_control_toolbox/wrench_manager.hpp>
@@ -15,6 +16,7 @@
 #include <folding_assembly_controller/AdaptiveController.h>
 #include <folding_assembly_controller/PoseGoal.h>
 #include <folding_assembly_controller/adaptive_velocity_controller.hpp>
+#include <folding_assembly_controller/FoldingConfig.h>
 
 namespace folding_assembly_controller
 {
@@ -49,6 +51,14 @@ namespace folding_assembly_controller
     **/
     bool setArm(const std::string &arm_name, std::string &eef_name);
 
+    /**
+      Allows dynamic reconfiguration of relevant parameters of the controlller.
+
+      @param config Configuration object with parameters.
+      @param level The reconfig level.
+    **/
+    void reconfig(FoldingConfig &config, uint32_t level);
+
     ros::NodeHandle nh_;
     std::string rod_eef_, surface_eef_;
     folding_algorithms::KalmanEstimator kalman_filter_;
@@ -58,6 +68,8 @@ namespace folding_assembly_controller
     generic_control_toolbox::WrenchManager wrench_manager_;
     generic_control_toolbox::MarkerManager marker_manager_;
     std::unique_ptr<folding_algorithms::ECTSController> ects_controller_;
+    dynamic_reconfigure::Server<FoldingConfig> dynamic_reconfigure_server_;
+    dynamic_reconfigure::Server<FoldingConfig>::CallbackType dynamic_reconfigure_callback_;
     double pc_goal_, thetac_goal_, vd_, wd_, contact_offset_;
     bool has_init_, pose_goal_;
   };
