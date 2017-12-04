@@ -60,6 +60,7 @@ namespace folding_assembly_controller
     // Initialize markers
     marker_manager_.addMarkerGroup("estimates", "folding_markers/estimates");
     marker_manager_.addMarkerGroup("sticks", "folding_markers/sticks");
+    marker_manager_.addMarkerGroup("pose_feedback", "folding_markers/pose_feedback");
     marker_manager_.addMarker("estimates", "translational_estimate", "folding_assembly", base_link, generic_control_toolbox::MarkerType::arrow);
     marker_manager_.setMarkerColor("estimates", "translational_estimate", 1, 0, 0);
     marker_manager_.addMarker("estimates", "rotational_estimate", "folding_assembly", base_link, generic_control_toolbox::MarkerType::arrow);
@@ -70,6 +71,10 @@ namespace folding_assembly_controller
     marker_manager_.setMarkerColor("sticks", "r1", 1, 0, 0);
     marker_manager_.addMarker("sticks", "r2", "folding_assembly", base_link, generic_control_toolbox::MarkerType::arrow);
     marker_manager_.setMarkerColor("sticks", "r2", 0, 1, 0);
+    marker_manager_.addMarker("pose_feedback", "pose_target", "folding_assembly", base_link, generic_control_toolbox::MarkerType::arrow);
+    marker_manager_.setMarkerColor("pose_feedback", "pose_target", 0, 0, 1);
+    marker_manager_.addMarker("pose_feedback", "current_pose", "folding_assembly", base_link, generic_control_toolbox::MarkerType::arrow);
+    marker_manager_.setMarkerColor("pose_feedback", "current_pose", 1, 0, 0);
 
     dynamic_reconfigure_server_.reset(new dynamic_reconfigure::Server<FoldingConfig>(ros::NodeHandle(ros::this_node::getName() + "/folding_config")));
     dynamic_reconfigure_callback_ = boost::bind(&FoldingController::reconfig, this, _1, _2);
@@ -101,9 +106,9 @@ namespace folding_assembly_controller
     // end TEMP
     marker_manager_.setMarkerPose("estimates", "contact_point_estimate", pc_est);
 
-    Eigen::Vector3d t_est, k_est, r1, r2;
+    Eigen::Vector3d t_est, k_est, n_est, r1, r2;
     Eigen::Matrix<double, 6, 1> relative_twist;
-    double pc_proj, theta_proj, vd = 0, wd = 0;
+    double vd = 0, wd = 0;
     KDL::Frame sensor_to_base;
     KDL::Vector t_est_kdl, k_est_kdl;
 
@@ -115,6 +120,7 @@ namespace folding_assembly_controller
     k_est_kdl = sensor_to_base.M*k_est_kdl;
     tf::vectorKDLToEigen(t_est_kdl, t_est);
     tf::vectorKDLToEigen(k_est_kdl, k_est);
+    n_est = t_est.cross(k_est);
     marker_manager_.setMarkerPoints("estimates", "translational_estimate", pc_est.translation(), pc_est.translation() + 0.1*t_est);
     marker_manager_.setMarkerPoints("estimates", "rotational_estimate", pc_est.translation(), pc_est.translation() + 0.1*k_est);
     r1 = pc_est.translation() - p1_eig.translation();
@@ -124,9 +130,18 @@ namespace folding_assembly_controller
 
     if (pose_goal_)
     {
-      pc_proj = (pc_est.translation() - p2_eig.translation()).dot(t_est);
-      theta_proj = acos(r1.dot(t_est))/r1.norm();
+      double pc_proj, theta_proj;
+      Eigen::Vector3d r2_y, pose_target_dir, target_point;
+      pc_proj = r2.dot(t_est);
+      r2_y = r2 - r2.dot(t_est)*t_est;
+      theta_proj = atan2(-r1.dot(n_est), -r1.dot(t_est)); // want vector from contact to end-effector
+      target_point = p2_eig.translation() + pc_goal_*t_est + r2_y;
+      pose_target_dir = t_est*cos(thetac_goal_) + n_est*sin(thetac_goal_);
+      ROS_DEBUG_STREAM("Theta proj: " << theta_proj);
       pose_controller_.computeControl(pc_proj, theta_proj, pc_goal_, thetac_goal_, vd, wd);
+      ROS_DEBUG_STREAM("Wd: " << wd);
+      marker_manager_.setMarkerPoints("pose_feedback", "pose_target", target_point, target_point + pose_target_dir*contact_offset_);
+      marker_manager_.setMarkerPoints("pose_feedback", "current_pose", p2_eig.translation() + r2_y + pc_proj*t_est,  p1_eig.translation());
     }
     else
     {
