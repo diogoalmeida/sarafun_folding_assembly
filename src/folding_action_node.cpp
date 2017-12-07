@@ -14,8 +14,15 @@ void jointStatesCb(const sensor_msgs::JointState::ConstPtr &msg)
 int main(int argc, char ** argv)
 {
   ros::init(argc, argv, "/folding_controller");
-  ros::NodeHandle n;
-  folding_assembly_controller::FoldingController controller("action_name");
+  ros::NodeHandle n("~");
+  std::string action_name;
+
+  if (!n.getParam("action_name", action_name))
+  {
+    action_name = "folding_action";
+  }
+
+  folding_assembly_controller::FoldingController controller(action_name);
 
   ros::Subscriber joint_state_sub = n.subscribe("/joint_states", 1000, jointStatesCb);
   ros::Publisher state_pub = n.advertise<sensor_msgs::JointState>("/yumi/joint_command", 1000);
