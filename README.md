@@ -9,7 +9,7 @@ uncertainties on the task, such as the available motion directions and contact
 point location. Besides a dual-armed robot integrated with ROS, the package assumes
 the existance of at least one force and torque sensor.
 
-![ECTS](https://lh5.googleusercontent.com/XdnL-8iklN4WCx3oGqZWsEaHeJjMkAc8Nxqyv4fH-COVXFjeuOdLWMgighJXceyUth-0TfE5nV5O-W1TkDsg=w1920-h1037-rw)
+<a href="url"><img src="https://i.imgur.com/eGiQD2B.png" align="center" width="700" ></a>
 
 Dependencies
 ===
@@ -38,7 +38,7 @@ $ rosrun actionlib axclient.py /folding_controller/<action_name>
 
 where `<action_name>` is set in the configuration file. You should see the following GUI:
 
-![actionlib](https://lh5.googleusercontent.com/I1fmjDadn1zQhW7X1KqIdp3Fm5K5KpAseA5T1lp9GAmB3zmdhuCt3hGgp8WXFw6jR8VVho762TyEXwQWoV-O=w1920-h1037-rw)
+<a href="url"><img src="https://i.imgur.com/auBVHIz.png" align="center" width="700" ></a>
 
 The `init_t_error` and `init_k_error` variables are useful for controller experiments.
 `goal_force` sets the desired contact force along the estimated surface normal.
@@ -51,4 +51,4 @@ Dynamic Reconfigure
 A dynamic reconfigure server is provided for facilitating testing the system.
 Notably, it allows setting the degree to which the arms share the manipulation task, through the alpha parameter under the `ects` group.
 
-![reconfig](https://lh6.googleusercontent.com/joEmZUHQ3c-m6LtXO3oU-Z3JD0jIYKJgn_HM5dpCmS8twb1HW5er00Z9JbfE7Iff1WPSJI1voIewkcISMYhx=w1920-h1037-rw)
+<a href="url"><img src="https://i.imgur.com/9hlPIHU.png" align="center" width="700" ></a>
