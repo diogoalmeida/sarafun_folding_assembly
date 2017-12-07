@@ -1,4 +1,4 @@
-Folding assembly controller [![Build Status](https://travis-ci.org/diogoalmeida/sarafun_folding_assembly.svg?branch=ects)](https://travis-ci.org/diogoalmeida/sarafun_folding_assembly)
+Folding assembly controller [![Build Status](https://travis-ci.org/diogoalmeida/sarafun_folding_assembly.svg?branch=master)](https://travis-ci.org/diogoalmeida/sarafun_folding_assembly)
 =============
 
 This package provides the folding assembly functionality to the SARAFun project.
@@ -51,4 +51,4 @@ Dynamic Reconfigure
 A dynamic reconfigure server is provided for facilitating testing the system.
 Notably, it allows setting the degree to which the arms share the manipulation task, through the alpha parameter under the `ects` group.
 
-![reconfig](https://lh6.googleusercontent.com/joEmZUHQ3c-m6LtXO3oU-Z3JD0jIYKJgn_HM5dpCmS8twb1HW5er00Z9JbfE7Iff1WPSJI1voIewkcISMYhx=w1920-h1037-rw) 
+![reconfig](https://lh6.googleusercontent.com/joEmZUHQ3c-m6LtXO3oU-Z3JD0jIYKJgn_HM5dpCmS8twb1HW5er00Z9JbfE7Iff1WPSJI1voIewkcISMYhx=w1920-h1037-rw)
