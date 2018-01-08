@@ -71,7 +71,7 @@ namespace folding_algorithms{
     if (wrench.rows() == 6)
     {
       C = -matrix_parser_.computeSkewSymmetric(wrench.block<3,1>(0,0));
-      y = wrench.block<3,1>(3,0) - matrix_parser_.computeSkewSymmetric(wrench.block<3,1>(0,0))*p_e1;
+      y = wrench.block<3,1>(3,0) - matrix_parser_.computeSkewSymmetric(wrench.block<3,1>(0,0))*p_e2;
     }
     else
     {
