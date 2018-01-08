@@ -3,6 +3,7 @@
 
 #include <ros/ros.h>
 #include <stdexcept>
+#include <tf/transform_broadcaster.h>
 #include <dynamic_reconfigure/server.h>
 #include <generic_control_toolbox/marker_manager.hpp>
 #include <generic_control_toolbox/kdl_manager.hpp>
@@ -60,7 +61,7 @@ namespace folding_assembly_controller
     void reconfig(FoldingConfig &config, uint32_t level);
 
     ros::NodeHandle nh_;
-    std::string rod_eef_, surface_eef_;
+    std::string rod_eef_, surface_eef_, base_frame_;
     folding_algorithms::KalmanEstimator kalman_filter_;
     folding_algorithms::FoldingPoseController pose_controller_;
     folding_algorithms::AdaptiveController adaptive_velocity_controller_;
@@ -72,6 +73,7 @@ namespace folding_assembly_controller
     dynamic_reconfigure::Server<FoldingConfig>::CallbackType dynamic_reconfigure_callback_;
     double pc_goal_, thetac_goal_, vd_, wd_, contact_offset_;
     bool has_init_, pose_goal_;
+    ros::Publisher twist_pub_;
   };
 }
 #endif
