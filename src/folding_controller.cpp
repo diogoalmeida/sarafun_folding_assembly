@@ -104,7 +104,7 @@ namespace folding_assembly_controller
     wrench_manager_.wrenchAtGrippingPoint(surface_eef_, wrench2);
     tf::wrenchEigenToKDL(wrench2, wrench_kdl);
     wrench_kdl = p2.M*wrench_kdl;
-    tf::wrenchKDLToEigen(wrench_kdl, wrench2_rotated);
+    tf::wrenchKDLToEigen(wrench_kdl, wrench2_rotated); // wrench2_rotated is at the gripping point p2, expressed in the base frame coordinates
     tf::twistKDLToEigen(v1, v1_eig);
     wrench_transform.setOrigin(tf::Vector3(p2.p.x(), p2.p.y(), p2.p.z()));
     tf::Quaternion q;
@@ -165,7 +165,7 @@ namespace folding_assembly_controller
     KDL::Twist relative_twist_kdl;
     geometry_msgs::WrenchStamped twist_as_wrench;
 
-    relative_twist = adaptive_velocity_controller_.control(wrench2, vd, wd, dt.toSec());
+    relative_twist = adaptive_velocity_controller_.control(wrench2, vd, wd, dt.toSec()); // twist expressed at the contact point, in p2 coordinates
 
     tf::twistEigenToKDL(relative_twist, relative_twist_kdl);
     relative_twist_kdl = p2.M*relative_twist_kdl;
