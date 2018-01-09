@@ -1,20 +1,24 @@
 kinematic_chain_base_link: yumi_base_link
-contact_point_offset: 0.15
+contact_point_offset: 0.05
 action_name: folding_controller
+
+kdl_manager:
+  eps: 0.001
+  max_tf_attempts: 10
 
 rod_arm:
   kdl_eef_frame: "yumi_link_7_l"
-  gripping_frame: "yumi_link_7_l" #"gripper_l_finger_l"
+  gripping_frame: "l_gripping_point" #"gripper_l_finger_l"
   has_ft_sensor: false
   sensor_frame: ""
   sensor_topic: ""
 
 surface_arm:
   kdl_eef_frame: "yumi_link_7_r"
-  gripping_frame: "yumi_link_7_r"
+  gripping_frame: "r_gripping_point"
   has_ft_sensor: true
-  sensor_frame: "yumi_link_7_r"
-  sensor_topic: ""
+  sensor_frame: "optodaq_r_sensor_link"
+  sensor_topic: "/yumi/optodaq_r_compensated"
 
 kf_estimator:
   Q:
@@ -23,10 +27,10 @@ kf_estimator:
     data: [0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01]
 
 pose_controller:
-  vd_max: 0.01
-  wd_max: 0.05
-  position_gain: 1.0
-  orientation_gain: 1.0
+  vd_max: 0.05
+  wd_max: 0.25
+  position_gain: 0.1
+  orientation_gain: 0.1
 
 ects_controller:
   alpha: 0.5
