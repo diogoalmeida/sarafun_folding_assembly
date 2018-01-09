@@ -40,15 +40,29 @@ class JointSubscriber:
         return joint_commands
 
 
+def disable_cb(msg):
+    """Allows disabling the mux."""
+    global is_disabled_
+
+    if msg.data is False:
+        is_disabled_ = False
+    else:
+        is_disabled_ = True
+
 def joint_publisher():
     '''At a pre-defined rate, publish joint commands to the yumi controllers.'''
+    global is_disabled_
     rospy.init_node('yumi_joint_mux')
+    is_disabled_ = False
 
     if rospy.has_param('~controllers'):
         joint_controllers = rospy.get_param('~controllers')
     else:
         rospy.logerr("Missing joint controllers definition (controllers)")
         return False
+
+
+    disable_sub = rospy.Subscriber("/folding/disable", Bool, disable_cb)
 
     # TODO: sanity check
     controller_names = [key for key in joint_controllers]
@@ -74,8 +88,9 @@ def joint_publisher():
     while not rospy.is_shutdown():
         commands = joint_subscriber.get_joint_commands()
 
-        for name in commands:
-            publishers[name].publish(commands[name])
+        if not is_disabled_:
+            for name in commands:
+                publishers[name].publish(commands[name])
 
         r.sleep()
 
