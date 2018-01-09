@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import rospy
 from sensor_msgs.msg import JointState
-from std_msgs.msg import Float64
+from std_msgs.msg import Float64, Bool
 import IPython
 
 class JointSubscriber:
@@ -45,8 +45,10 @@ def disable_cb(msg):
     global is_disabled_
 
     if msg.data is False:
+        rospy.logwarn("Joint command mux enabled")
         is_disabled_ = False
     else:
+        rospy.logwarn("Joint command mux disabled")
         is_disabled_ = True
 
 def joint_publisher():
@@ -60,7 +62,6 @@ def joint_publisher():
     else:
         rospy.logerr("Missing joint controllers definition (controllers)")
         return False
-
 
     disable_sub = rospy.Subscriber("/folding/disable", Bool, disable_cb)
 
