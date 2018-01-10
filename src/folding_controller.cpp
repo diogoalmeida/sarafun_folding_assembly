@@ -26,8 +26,6 @@ namespace folding_assembly_controller
       return false;
     }
 
-    has_init_ = false; // true if controlAlgorithm has been called after a new goal
-
     // Initialize arms and set gripping points.
     kdl_manager_ = std::make_shared<generic_control_toolbox::KDLManager>(base_frame_);
 
@@ -322,7 +320,6 @@ namespace folding_assembly_controller
 
   void FoldingController::resetController()
   {
-    has_init_ = false;
     adaptive_velocity_controller_.reset();
   }
 }
