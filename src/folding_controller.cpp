@@ -153,7 +153,7 @@ namespace folding_assembly_controller
       ROS_DEBUG_STREAM("Theta proj: " << theta_proj);
       pose_controller_.computeControl(pc_proj, theta_proj, pc_goal_, thetac_goal_, vd, wd);
       ROS_DEBUG_STREAM("Wd: " << wd);
-      marker_manager_.setMarkerPoints("pose_feedback", "pose_target", target_point, target_point + pose_target_dir*contact_offset_);
+      marker_manager_.setMarkerPoints("pose_feedback", "pose_target", target_point, p1_eig.translation());
       marker_manager_.setMarkerPoints("pose_feedback", "current_pose", p2_eig.translation() + r2_y + pc_proj*t_est,  p1_eig.translation());
     }
     else
