@@ -181,9 +181,17 @@ namespace folding_assembly_controller
     twist_as_wrench.wrench.torque.z = relative_twist_kdl.rot.z();
     twist_pub_.publish(twist_as_wrench);
 
+    KDL::Frame eef1, eef2;
+    Eigen::Affine3d eef1_eig, eef2_eig;
+
+    kdl_manager_->getEefPose(rod_eef_, current_state, eef1);
+    kdl_manager_->getEefPose(surface_eef_, current_state, eef2);
+    tf::transformKDLToEigen(eef1, eef1_eig);
+    tf::transformKDLToEigen(eef2, eef2_eig);
+
     Eigen::Matrix<double, 14, 1> qdot;
-    qdot = ects_controller_->control(current_state, r1, r2, Eigen::Matrix<double, 6, 1>::Zero(), relative_twist);
-    kdl_manager_->getJointState(rod_eef_, qdot.block<7, 1>(0, 0), ret);
+    // need to use virtual sticks up to the end-effector location, not the grasping point. TODO: Fix this
+    qdot = ects_controller_->control(current_state, pc_est.translation() - eef1_eig.translation(), pc_est.translation() - eef2_eig.translation(), Eigen::Matrix<double, 6, 1>::Zero(), relative_twist);      kdl_manager_->getJointState(rod_eef_, qdot.block<7, 1>(0, 0), ret);
     kdl_manager_->getJointState(surface_eef_, qdot.block<7,1>(7, 0), ret);
     marker_manager_.publishMarkers();
 
