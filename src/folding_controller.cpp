@@ -199,63 +199,23 @@ namespace folding_assembly_controller
   bool FoldingController::setArm(const std::string &arm_name, std::string &eef_name)
   {
       generic_control_toolbox::ArmInfo info;
-      bool has_ft_sensor; // HACK: using the boolean in "ArmInfo" gives an rvalue assignment error that I do not understand
 
-      if (!nh_.getParam(arm_name + "/kdl_eef_frame", info.kdl_eef_frame))
+      if(!generic_control_toolbox::getArmInfo(arm_name, info))
       {
-        ROS_ERROR("Missing kinematic chain eef (%s/kdl_eef_frame)", arm_name.c_str());
         return false;
       }
 
       eef_name = info.kdl_eef_frame;
 
-      if (!nh_.getParam(arm_name + "/gripping_frame", info.gripping_frame))
-      {
-        ROS_ERROR("Missing kinematic gripping_frame (%s/gripping_frame)", arm_name.c_str());
-        return false;
-      }
-
-      if (!nh_.getParam(arm_name + "/has_ft_sensor", has_ft_sensor))
-      {
-        ROS_ERROR("Missing sensor info (%s/has_ft_sensor)", arm_name.c_str());
-        return false;
-      }
-
-      if (!nh_.getParam(arm_name + "/sensor_frame", info.sensor_frame))
-      {
-        ROS_ERROR("Missing sensor info (%s/sensor_frame)", arm_name.c_str());
-        return false;
-      }
-
-      if (!nh_.getParam(arm_name + "/sensor_topic", info.sensor_topic))
-      {
-        ROS_ERROR("Missing sensor info (%s/sensor_topic)", arm_name.c_str());
-        return false;
-      }
-
-      if(!kdl_manager_->initializeArm(info.kdl_eef_frame))
+      if(!generic_control_toolbox::setKDLManager(info, kdl_manager_))
       {
         return false;
       }
 
-      if (!kdl_manager_->setGrippingPoint(info.kdl_eef_frame, info.gripping_frame))
+      if(!generic_control_toolbox::setWrenchManager(info, wrench_manager_))
       {
         return false;
       }
-
-      if (has_ft_sensor)
-      {
-        if (!wrench_manager_.initializeWrenchComm(info.kdl_eef_frame, info.sensor_frame, info.gripping_frame, info.sensor_topic))
-        {
-          return false;
-        }
-      }
-      else
-      {
-        ROS_WARN("End-effector %s has no F/T sensor.", info.kdl_eef_frame.c_str());
-      }
-
-      ROS_DEBUG("Successfully set up arm %s with eef_frame %s, gripping_frame %s sensor frame %s and sensor topic %s", arm_name.c_str(), info.kdl_eef_frame.c_str(), info.gripping_frame.c_str(), info.sensor_frame.c_str(), info.sensor_topic.c_str());
 
       return true;
   }
