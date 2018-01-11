@@ -189,7 +189,8 @@ namespace folding_assembly_controller
 
     Eigen::Matrix<double, 14, 1> qdot;
     // need to use virtual sticks up to the end-effector location, not the grasping point. TODO: Fix this
-    qdot = ects_controller_->control(current_state, pc_est.translation() - eef1_eig.translation(), pc_est.translation() - eef2_eig.translation(), Eigen::Matrix<double, 6, 1>::Zero(), relative_twist);      kdl_manager_->getJointState(rod_eef_, qdot.block<7, 1>(0, 0), ret);
+    qdot = ects_controller_->control(current_state, pc_est.translation() - eef1_eig.translation(), pc_est.translation() - eef2_eig.translation(), Eigen::Matrix<double, 6, 1>::Zero(), relative_twist);
+    kdl_manager_->getJointState(rod_eef_, qdot.block<7, 1>(0, 0), ret);
     kdl_manager_->getJointState(surface_eef_, qdot.block<7,1>(7, 0), ret);
     marker_manager_.publishMarkers();
 
