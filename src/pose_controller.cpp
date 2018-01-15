@@ -2,7 +2,7 @@
 
 namespace folding_algorithms{
 
-    FoldingPoseController::FoldingPoseController()
+    FoldingPoseController::FoldingPoseController(const std::string &ns) : ns_(ns)
     {
       nh_ = ros::NodeHandle("~");
       getParams();
@@ -12,27 +12,27 @@ namespace folding_algorithms{
 
     void FoldingPoseController::getParams()
     {
-      if(!nh_.getParam("pose_controller/vd_max", vd_max_))
+      if(!nh_.getParam(ns_ + "/vd_max", vd_max_))
       {
-        ROS_WARN("Missing vd_max in pose controller. Using default (pose_controller/vd_max)");
+        ROS_WARN_STREAM("Missing vd_max in pose controller. Using default (" << ns_ << "/vd_max)");
         vd_max_ = 0.01;
       }
 
-      if(!nh_.getParam("pose_controller/wd_max", wd_max_))
+      if(!nh_.getParam(ns_ + "/wd_max", wd_max_))
       {
-        ROS_WARN("Missing wd_max in pose controller. Using default (pose_controller/wd_max)");
+        ROS_WARN_STREAM("Missing wd_max in pose controller. Using default (" << ns_ << "/wd_max)");
         wd_max_ = 0.05;
       }
 
-      if(!nh_.getParam("pose_controller/position_gain", position_gain_))
+      if(!nh_.getParam(ns_ + "/position_gain", position_gain_))
       {
-        ROS_WARN("Missing position_gain in pose controller. Using default (pose_controller/position_gain)");
+        ROS_WARN_STREAM("Missing position_gain in pose controller. Using default (" + ns_ + "/position_gain)");
         position_gain_ = 1;
       }
 
-      if(!nh_.getParam("pose_controller/orientation_gain", orientation_gain_))
+      if(!nh_.getParam(ns_ + "/orientation_gain", orientation_gain_))
       {
-        ROS_WARN("Missing orientation_gain in pose controller. Using default (pose_controller/orientation_gain)");
+        ROS_WARN_STREAM("Missing orientation_gain in pose controller. Using default (" << ns_ << "/orientation_gain)");
         orientation_gain_ = 1;
       }
     }
