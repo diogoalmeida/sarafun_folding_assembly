@@ -71,7 +71,15 @@ namespace folding_algorithms{
     if (wrench.rows() == 6)
     {
       C = -matrix_parser_.computeSkewSymmetric(wrench.block<3,1>(0,0));
-      y = wrench.block<3,1>(3,0) - matrix_parser_.computeSkewSymmetric(wrench.block<3,1>(0,0))*p_e2;
+
+      if (wrench == Eigen::Matrix<double, 6, 1>::Zero())
+      {
+        y = wrench.block<3,1>(3,0);
+      }
+      else
+      {
+        y = wrench.block<3,1>(3,0) - matrix_parser_.computeSkewSymmetric(wrench.block<3,1>(0,0))*p_e2;
+      }
     }
     else
     {

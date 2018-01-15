@@ -153,11 +153,13 @@ namespace folding_assembly_controller
       ROS_DEBUG_STREAM("Wd: " << wd);
       marker_manager_.setMarkerPoints("pose_feedback", "pose_target", target_point, p1_eig.translation());
       marker_manager_.setMarkerPoints("pose_feedback", "current_pose", p2_eig.translation() + r2_y + pc_proj*t_est,  p1_eig.translation());
+      feedback_.phase = "Pose regulation";
     }
     else
     {
       vd = vd_;
       wd = wd_;
+      feedback_.phase = "Velocity control";
     }
 
     KDL::Twist relative_twist_kdl;
@@ -198,6 +200,7 @@ namespace folding_assembly_controller
     kdl_manager_->getJointState(surface_eef_, qdot.block<7,1>(7, 0), ret);
     marker_manager_.publishMarkers();
 
+    action_server_->publishFeedback(feedback_);
     return ret;
   }
 
