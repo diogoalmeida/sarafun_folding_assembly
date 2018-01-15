@@ -26,9 +26,10 @@ typedef Eigen::Matrix<double, 6, 1> Vector6d;
       @param v_d The desired linear velocity.
       @param w_d The desired angular velocity.
       @param dt The elapsed time between calls.
+      @param force_direction Optional direction for the force controlled component.
       @return The control twist for the relative velocity between parts.
     **/
-    Vector6d control(const Vector6d &wrench, double v_d, double w_d, double dt);
+    Vector6d control(const Vector6d &wrench, double v_d, double w_d, double dt, const Eigen::Vector3d &force_direction = Eigen::Vector3d::Zero());
 
     /**
       Resets the controller back to an initial state.
@@ -52,7 +53,7 @@ typedef Eigen::Matrix<double, 6, 1> Vector6d;
 
     /**
       Return the current estimates in the wrench frame.
-      
+
       @param t Current translational DOF estimate.
       @param r Current rotational DOF estimate.
     **/

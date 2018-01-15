@@ -117,11 +117,11 @@ namespace folding_assembly_controller
     // end TEMP
     marker_manager_.setMarkerPose("estimates", "contact_point_estimate", pc_est);
 
-    Eigen::Vector3d t_est, k_est, n_est, r1, r2;
+    Eigen::Vector3d t_est, k_est, n_est, r1, r2, r1_in_c_frame;
     Eigen::Matrix<double, 6, 1> relative_twist;
     double vd = 0, wd = 0;
     KDL::Frame sensor_to_base;
-    KDL::Vector t_est_kdl, k_est_kdl;
+    KDL::Vector t_est_kdl, k_est_kdl, r1_kdl;
 
     kdl_manager_->getSensorPoint(surface_eef_, current_state, sensor_to_base);
     adaptive_velocity_controller_.getEstimates(t_est, k_est);
@@ -163,7 +163,11 @@ namespace folding_assembly_controller
     KDL::Twist relative_twist_kdl;
     geometry_msgs::WrenchStamped twist_as_wrench;
 
-    relative_twist = adaptive_velocity_controller_.control(wrench2, vd, wd, dt.toSec()); // twist expressed at the contact point, in p2 coordinates
+    // TODO: Choose direction for force control
+    tf::vectorEigenToKDL(r1, r1_kdl); // use r1 as direction for force control. Need to rotate to C-frame
+    r1_kdl = p2.M.Inverse()*r1_kdl;
+    tf::vectorKDLToEigen(r1_kdl, r1_in_c_frame);
+    relative_twist = adaptive_velocity_controller_.control(wrench2, vd, wd, dt.toSec(), r1_in_c_frame.normalized()); // twist expressed at the contact point, in p2 coordinates
 
     tf::twistEigenToKDL(relative_twist, relative_twist_kdl);
     relative_twist_kdl = p2.M*relative_twist_kdl;
@@ -244,11 +248,11 @@ namespace folding_assembly_controller
       wd_ = goal->velocity_goal.wd;
     }
 
-    KDL::Frame p2;
-    Eigen::Affine3d p2_eig;
-    kdl_manager_->getGrippingPoint(surface_eef_, lastState(sensor_msgs::JointState()), p2);
-    tf::transformKDLToEigen(p2, p2_eig);
-    kalman_filter_.initialize(p2_eig.translation());
+    KDL::Frame p1;
+    Eigen::Affine3d p1_eig;
+    kdl_manager_->getGrippingPoint(rod_eef_, lastState(sensor_msgs::JointState()), p1);
+    tf::transformKDLToEigen(p1, p1_eig);
+    kalman_filter_.initialize(p1_eig.translation() + contact_offset_*p1_eig.matrix().block<3,1>(0, 2));
 
     return true;
   }

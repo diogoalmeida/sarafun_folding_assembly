@@ -22,16 +22,26 @@ namespace folding_algorithms{
 
   AdaptiveController::~AdaptiveController(){}
 
-  Vector6d AdaptiveController::control(const Vector6d &wrench, double v_d, double w_d, double dt)
+  Vector6d AdaptiveController::control(const Vector6d &wrench, double v_d, double w_d, double dt, const Eigen::Vector3d &force_direction)
   {
-    Eigen::Vector3d normal, torque_d;
+    Eigen::Vector3d normal, torque_d, force;
     Eigen::Matrix3d I = Eigen::Matrix3d::Identity();
     Vector6d ref_twist;
 
     normal = t_.cross(r_);
     torque_d = Eigen::Vector3d::Zero();
+    force = wrench.block<3,1>(0,0);
 
-    force_error_ = wrench.block<3,1>(0,0) - f_d_*normal;
+    if (force_direction == Eigen::Vector3d::Zero())
+    {
+      force_error_ = force - f_d_*normal;
+    }
+    else
+    {
+      force_error_ = force - f_d_*force_direction;
+      ROS_DEBUG_STREAM_THROTTLE(2, "Current wrench: " << force << ". Desired wrench: " << f_d_*force_direction);
+    }
+
     torque_error_ = wrench.block<3,1>(3,0);
 
     if (torque_error_.norm() < torque_slack_)
