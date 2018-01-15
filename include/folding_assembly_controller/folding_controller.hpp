@@ -72,7 +72,7 @@ namespace folding_assembly_controller
     std::shared_ptr<dynamic_reconfigure::Server<FoldingConfig> > dynamic_reconfigure_server_;
     dynamic_reconfigure::Server<FoldingConfig>::CallbackType dynamic_reconfigure_callback_;
     double pc_goal_, thetac_goal_, vd_, wd_, contact_offset_, prev_theta_proj_, theta_lim_, max_contact_force_;
-    bool pose_goal_;
+    bool pose_goal_, block_rotation_;
     ros::Publisher twist_pub_;
   };
 }

@@ -118,6 +118,11 @@ namespace folding_assembly_controller
     {
       pc_est.translation() = kalman_filter_.estimate(p1_eig.translation(), v1_eig, p2_eig.translation(), wrench2_rotated, dt.toSec()); // The kalman filter estimates in the base frame, thus the wrench should be writen in that basis.
     }
+    else
+    {
+      pc_est.translation() = kalman_filter_.estimate(p1_eig.translation(), v1_eig, p2_eig.translation(), Eigen::Matrix<double, 6, 1>::Zero(), dt.toSec());
+    }
+
     // TEMP
     // pc_est.translation() = p1_eig.translation() + contact_offset_*p1_eig.matrix().block<3,1>(0, 2);
     // end TEMP
@@ -174,6 +179,9 @@ namespace folding_assembly_controller
     tf::vectorEigenToKDL(r1, r1_kdl); // use r1 as direction for force control. Need to rotate to C-frame
     r1_kdl = p2.M.Inverse()*r1_kdl;
     tf::vectorKDLToEigen(r1_kdl, r1_in_c_frame);
+    // tf::vectorEigenToKDL(p1_eig.translation(), r1_kdl);
+    // r1_kdl = p2.M.Inverse()*r1_kdl;
+    // tf::vectorKDLToEigen(r1_kdl, r1_in_c_frame);
     relative_twist = adaptive_velocity_controller_.control(wrench2, vd, wd, dt.toSec(), r1_in_c_frame.normalized()); // twist expressed at the contact point, in p2 coordinates
 
     tf::twistEigenToKDL(relative_twist, relative_twist_kdl);
@@ -200,8 +208,9 @@ namespace folding_assembly_controller
 
     Eigen::Matrix<double, 14, 1> qdot;
     // need to use virtual sticks up to the end-effector location, not the grasping point. TODO: Fix this
-    if (pose_goal_ && wrench2.norm() > max_contact_force_) // time to finish the action
+    if ((pose_goal_ && wrench2.norm() > max_contact_force_) || block_rotation_) // time to finish the action
     {
+      block_rotation_ = true;
       Eigen::Matrix<double, 6, 1> absolute_twist;
       double pc_proj, theta_proj;
       Eigen::Vector3d p2_z, base_x, base_y, base_z;
@@ -215,12 +224,13 @@ namespace folding_assembly_controller
       absolute_pose_controller_.computeControl(pc_proj, theta_proj, 0.0, 0.0, vd, wd);
       absolute_twist.block<3,1>(0, 0) = vd*base_y;
       absolute_twist.block<3,1>(3, 0) = wd*base_x;
-      qdot = ects_controller_->control(current_state, pc_est.translation() - eef1_eig.translation(), pc_est.translation() - eef2_eig.translation(), absolute_twist, relative_twist);
+      qdot = ects_controller_->control(current_state, pc_est.translation() - eef1_eig.translation(), pc_est.translation() - eef2_eig.translation(), absolute_twist, Eigen::Matrix<double, 6, 1>::Zero());
     }
     else
     {
       qdot = ects_controller_->control(current_state, pc_est.translation() - eef1_eig.translation(), pc_est.translation() - eef2_eig.translation(), Eigen::Matrix<double, 6, 1>::Zero(), relative_twist);
     }
+
     kdl_manager_->getJointState(rod_eef_, qdot.block<7, 1>(0, 0), ret);
     kdl_manager_->getJointState(surface_eef_, qdot.block<7,1>(7, 0), ret);
     marker_manager_.publishMarkers();
@@ -260,6 +270,7 @@ namespace folding_assembly_controller
     k_init << cos(goal->adaptive_params.init_k_error), sin(goal->adaptive_params.init_k_error), 0;
     adaptive_velocity_controller_.initEstimates(t_init, k_init);
     prev_theta_proj_ = M_PI;
+    block_rotation_ = false;
 
     if (goal->use_pose_goal)
     {
@@ -277,6 +288,7 @@ namespace folding_assembly_controller
     }
 
     theta_lim_ = goal->theta_lim;
+    max_contact_force_ = goal->max_contact_force;
 
     KDL::Frame p1;
     Eigen::Affine3d p1_eig;
