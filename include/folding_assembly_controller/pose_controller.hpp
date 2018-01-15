@@ -15,7 +15,7 @@ namespace folding_algorithms{
 class FoldingPoseController
 {
 public:
-  FoldingPoseController();
+  FoldingPoseController(const std::string &ns = "pose_controller");
   ~FoldingPoseController();
 
   /**
@@ -31,6 +31,7 @@ public:
   void computeControl(double pc, double thetac, double pd, double thetad, double &vd, double &wd);
 private:
   double vd_max_, wd_max_, position_gain_, orientation_gain_;
+  std::string ns_;
   ros::NodeHandle nh_;
 
   /**
