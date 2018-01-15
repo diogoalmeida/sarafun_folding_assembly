@@ -55,6 +55,9 @@ namespace folding_assembly_controller
       return false;
     }
 
+    relative_pose_controller_ = folding_algorithms::FoldingPoseController("relative_pose_controller");
+    absolute_pose_controller_ = folding_algorithms::FoldingPoseController("absolute_pose_controller");
+
     // Initialize markers
     marker_manager_.addMarkerGroup("estimates", "folding_markers/estimates");
     marker_manager_.addMarkerGroup("sticks", "folding_markers/sticks");
@@ -111,7 +114,10 @@ namespace folding_assembly_controller
     br.sendTransform(tf::StampedTransform(wrench_transform, ros::Time::now(), base_frame_, "p2_rotated"));
 
     pc_est.linear() = p1_eig.linear();
-    pc_est.translation() = kalman_filter_.estimate(p1_eig.translation(), v1_eig, p2_eig.translation(), wrench2_rotated, dt.toSec()); // The kalman filter estimates in the base frame, thus the wrench should be writen in that basis.
+    if (abs(prev_theta_proj_) > theta_lim_) // For small angles we antecipate that the single contact point assumption is violated
+    {
+      pc_est.translation() = kalman_filter_.estimate(p1_eig.translation(), v1_eig, p2_eig.translation(), wrench2_rotated, dt.toSec()); // The kalman filter estimates in the base frame, thus the wrench should be writen in that basis.
+    }
     // TEMP
     // pc_est.translation() = p1_eig.translation() + contact_offset_*p1_eig.matrix().block<3,1>(0, 2);
     // end TEMP
@@ -149,7 +155,8 @@ namespace folding_assembly_controller
       target_point = p2_eig.translation() + pc_goal_*t_est + r2_y;
       pose_target_dir = t_est*cos(thetac_goal_) + n_est*sin(thetac_goal_);
       ROS_DEBUG_STREAM("Theta proj: " << theta_proj);
-      pose_controller_.computeControl(pc_proj, theta_proj, pc_goal_, thetac_goal_, vd, wd);
+      prev_theta_proj_ = theta_proj;
+      relative_pose_controller_.computeControl(pc_proj, theta_proj, pc_goal_, thetac_goal_, vd, wd);
       ROS_DEBUG_STREAM("Wd: " << wd);
       marker_manager_.setMarkerPoints("pose_feedback", "pose_target", target_point, p1_eig.translation());
       marker_manager_.setMarkerPoints("pose_feedback", "current_pose", p2_eig.translation() + r2_y + pc_proj*t_est,  p1_eig.translation());
@@ -193,7 +200,27 @@ namespace folding_assembly_controller
 
     Eigen::Matrix<double, 14, 1> qdot;
     // need to use virtual sticks up to the end-effector location, not the grasping point. TODO: Fix this
-    qdot = ects_controller_->control(current_state, pc_est.translation() - eef1_eig.translation(), pc_est.translation() - eef2_eig.translation(), Eigen::Matrix<double, 6, 1>::Zero(), relative_twist);
+    if (pose_goal_ && wrench2.norm() > max_contact_force_) // time to finish the action
+    {
+      Eigen::Matrix<double, 6, 1> absolute_twist;
+      double pc_proj, theta_proj;
+      Eigen::Vector3d p2_z, base_x, base_y, base_z;
+      pc_proj = r2.dot(t_est);
+      p2_z = p2_eig.matrix().block<3,1>(0, 2);
+      base_x << 1, 0, 0;
+      base_y << 0, 1, 0;
+      base_z << 0, 0, 1;
+      theta_proj = atan2(p2_z.dot(base_z), p2_z.dot(base_y)); // want vector from contact to end-effector
+      ROS_DEBUG_STREAM("Theta proj: " << theta_proj);
+      absolute_pose_controller_.computeControl(pc_proj, theta_proj, 0.0, 0.0, vd, wd);
+      absolute_twist.block<3,1>(0, 0) = vd*base_y;
+      absolute_twist.block<3,1>(3, 0) = wd*base_x;
+      qdot = ects_controller_->control(current_state, pc_est.translation() - eef1_eig.translation(), pc_est.translation() - eef2_eig.translation(), absolute_twist, relative_twist);
+    }
+    else
+    {
+      qdot = ects_controller_->control(current_state, pc_est.translation() - eef1_eig.translation(), pc_est.translation() - eef2_eig.translation(), Eigen::Matrix<double, 6, 1>::Zero(), relative_twist);
+    }
     kdl_manager_->getJointState(rod_eef_, qdot.block<7, 1>(0, 0), ret);
     kdl_manager_->getJointState(surface_eef_, qdot.block<7,1>(7, 0), ret);
     marker_manager_.publishMarkers();
@@ -232,6 +259,7 @@ namespace folding_assembly_controller
     t_init << sin(goal->adaptive_params.init_t_error), 0, cos(goal->adaptive_params.init_t_error);
     k_init << cos(goal->adaptive_params.init_k_error), sin(goal->adaptive_params.init_k_error), 0;
     adaptive_velocity_controller_.initEstimates(t_init, k_init);
+    prev_theta_proj_ = M_PI;
 
     if (goal->use_pose_goal)
     {
@@ -247,6 +275,8 @@ namespace folding_assembly_controller
       vd_ = goal->velocity_goal.vd;
       wd_ = goal->velocity_goal.wd;
     }
+
+    theta_lim_ = goal->theta_lim;
 
     KDL::Frame p1;
     Eigen::Affine3d p1_eig;

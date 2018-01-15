@@ -63,7 +63,7 @@ namespace folding_assembly_controller
     ros::NodeHandle nh_;
     std::string rod_eef_, surface_eef_, base_frame_;
     folding_algorithms::KalmanEstimator kalman_filter_;
-    folding_algorithms::FoldingPoseController pose_controller_;
+    folding_algorithms::FoldingPoseController relative_pose_controller_, absolute_pose_controller_;
     folding_algorithms::AdaptiveController adaptive_velocity_controller_;
     std::shared_ptr<generic_control_toolbox::KDLManager> kdl_manager_;
     generic_control_toolbox::WrenchManager wrench_manager_;
@@ -71,7 +71,7 @@ namespace folding_assembly_controller
     std::unique_ptr<folding_algorithms::ECTSController> ects_controller_;
     std::shared_ptr<dynamic_reconfigure::Server<FoldingConfig> > dynamic_reconfigure_server_;
     dynamic_reconfigure::Server<FoldingConfig>::CallbackType dynamic_reconfigure_callback_;
-    double pc_goal_, thetac_goal_, vd_, wd_, contact_offset_;
+    double pc_goal_, thetac_goal_, vd_, wd_, contact_offset_, prev_theta_proj_, theta_lim_, max_contact_force_;
     bool pose_goal_;
     ros::Publisher twist_pub_;
   };

@@ -26,10 +26,16 @@ kf_estimator:
   R:
     data: [0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01]
 
-pose_controller:
+relative_pose_controller:
   vd_max: 0.05
   wd_max: 0.25
   position_gain: 0.0
+  orientation_gain: 0.1
+
+absolute_pose_controller_:
+  vd_max: 0.05
+  wd_max: 0.25
+  position_gain: 0.1
   orientation_gain: 0.1
 
 ects_controller:
