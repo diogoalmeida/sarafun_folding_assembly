@@ -59,7 +59,8 @@ namespace folding_algorithms{
       v_f_ = v_f_*max_force_/v_f_.norm();
     }
 
-    ref_twist.block<3,1>(0,0) = v_d*t_ - (I - t_*t_.transpose())*v_f_;
+    // ref_twist.block<3,1>(0,0) = v_d*t_ - (I - t_*t_.transpose())*v_f_;
+    ref_twist.block<3,1>(0,0) = v_d*t_ - v_f_;
     t_ = t_ - alpha_adapt_t_*v_d*(I - t_*t_.transpose())*v_f_*dt;
     t_ = t_/t_.norm();
 

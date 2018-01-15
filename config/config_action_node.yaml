@@ -1,5 +1,5 @@
 kinematic_chain_base_link: yumi_base_link
-contact_point_offset: 0.05
+contact_point_offset: 0.03
 action_name: folding_controller
 
 kdl_manager:
@@ -29,7 +29,7 @@ kf_estimator:
 pose_controller:
   vd_max: 0.05
   wd_max: 0.25
-  position_gain: 0.1
+  position_gain: 0.0
   orientation_gain: 0.1
 
 ects_controller:
