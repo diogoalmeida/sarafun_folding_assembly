@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <launch>
   <arg name="debug" default="false" />
+  <arg name="joint_state_topic" default="/robot/joint_states"/>
+  <arg name="joint_command_topic" default="/egmri_commanded_topic"/>
+  <arg name="description_param" default="/omg/robot_description" />
 
   <group if="$(arg debug)">
     <env name="ROSCONSOLE_CONFIG_FILE" value="$(find folding_assembly_controller)/config/logger.config"/>
@@ -9,8 +12,9 @@
     </node>
     <node name="folding_controller" pkg="folding_assembly_controller" type="folding_action_node" output="screen" launch-prefix="xterm -e gdb -ex run --args" required="true">
       <rosparam command="load" file="$(find folding_assembly_controller)/config/config_action_node.yaml"/>
-      <remap from="joint_states" to="yumi/joint_states"/>
-      <remap from="joint_command" to="yumi/joint_command"/>
+      <remap from="joint_states" to="$(arg joint_state_topic)"/>
+      <remap from="joint_command" to="$(arg joint_command_topic)"/>
+      <remap from="/robot_description" to="$(arg description_param)"/>
     </node>
   </group>
 
@@ -20,8 +24,9 @@
     </node>
     <node name="folding_controller" pkg="folding_assembly_controller" type="folding_action_node" output="screen" required="true">
       <rosparam command="load" file="$(find folding_assembly_controller)/config/config_action_node.yaml"/>
-      <remap from="joint_states" to="yumi/joint_states"/>
-      <remap from="joint_command" to="yumi/joint_command"/>
+      <remap from="joint_states" to="$(arg joint_state_topic)"/>
+      <remap from="joint_command" to="$(arg joint_command_topic)"/>
+      <remap from="/robot_description" to="$(arg description_param)"/>
     </node>
   </group>
 
