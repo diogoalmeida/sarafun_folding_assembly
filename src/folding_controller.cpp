@@ -26,6 +26,30 @@ namespace folding_assembly_controller
       return false;
     }
 
+    if (!nh_.getParam("grasp/rotational_axis", rot_axis_))
+    {
+      ROS_WARN("Missing grasp/rotational_axis parameter, using default");
+      rot_axis_ = "y";
+    }
+
+    if (!nh_.getParam("grasp/translational_axis", trans_axis_))
+    {
+      ROS_WARN("Missing grasp/translational_axis parameter, using default");
+      trans_axis_ = "x";
+    }
+
+    if (rot_axis_ != "x" && rot_axis_ != "y" && rot_axis_ != "z")
+    {
+      ROS_ERROR_STREAM("Invalid rotational axis parameter: " << rot_axis_);
+      return false;
+    }
+
+    if (trans_axis_ != "x" && trans_axis_ != "y" && trans_axis_ != "z")
+    {
+      ROS_ERROR_STREAM("Invalid translational axis parameter: " << trans_axis_);
+      return false;
+    }
+
     // Initialize arms and set gripping points.
     kdl_manager_ = std::make_shared<generic_control_toolbox::KDLManager>(base_frame_);
 
@@ -232,8 +256,37 @@ namespace folding_assembly_controller
   {
     Eigen::Vector3d t_init, k_init;
     adaptive_velocity_controller_.setReferenceForce(goal->adaptive_params.goal_force);
-    t_init << sin(goal->adaptive_params.init_t_error), 0, cos(goal->adaptive_params.init_t_error);
-    k_init << cos(goal->adaptive_params.init_k_error), sin(goal->adaptive_params.init_k_error), 0;
+
+    if (trans_axis_ == "x")
+    {
+      t_init << cos(goal->adaptive_params.init_t_error), 0, sin(goal->adaptive_params.init_t_error);
+    }
+
+    if (trans_axis_ == "y")
+    {
+      t_init << 0, cos(goal->adaptive_params.init_t_error), sin(goal->adaptive_params.init_t_error);
+    }
+
+    if (trans_axis_ == "z")
+    {
+      t_init << sin(goal->adaptive_params.init_t_error), 0, cos(goal->adaptive_params.init_t_error);
+    }
+
+    if (rot_axis_ == "x")
+    {
+      k_init << cos(goal->adaptive_params.init_k_error), sin(goal->adaptive_params.init_k_error), 0;
+    }
+
+    if (rot_axis_ == "y")
+    {
+      k_init << 0, cos(goal->adaptive_params.init_k_error), sin(goal->adaptive_params.init_k_error);
+    }
+
+    if (rot_axis_ == "z")
+    {
+      k_init << 0, sin(goal->adaptive_params.init_k_error), cos(goal->adaptive_params.init_k_error);
+    }
+
     adaptive_velocity_controller_.initEstimates(t_init, k_init);
 
     if (goal->use_pose_goal)

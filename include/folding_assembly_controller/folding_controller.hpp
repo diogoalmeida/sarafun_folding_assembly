@@ -61,7 +61,7 @@ namespace folding_assembly_controller
     void reconfig(FoldingConfig &config, uint32_t level);
 
     ros::NodeHandle nh_;
-    std::string rod_eef_, surface_eef_, base_frame_;
+    std::string rod_eef_, surface_eef_, base_frame_, rot_axis_, trans_axis_;
     folding_algorithms::KalmanEstimator kalman_filter_;
     folding_algorithms::FoldingPoseController pose_controller_;
     folding_algorithms::AdaptiveController adaptive_velocity_controller_;

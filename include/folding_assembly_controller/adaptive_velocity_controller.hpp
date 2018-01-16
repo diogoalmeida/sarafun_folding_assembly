@@ -78,7 +78,7 @@ typedef Eigen::Matrix<double, 6, 1> Vector6d;
 
   private:
     double alpha_force_, beta_force_, alpha_torque_, beta_torque_;
-    double f_d_, alpha_adapt_t_, alpha_adapt_r_, torque_slack_, max_force_, max_torque_;
+    double f_d_, alpha_adapt_t_, alpha_adapt_r_, torque_slack_, max_force_, max_torque_, force_slack_;
     Eigen::Vector3d t_, r_, int_force_, int_torque_, v_f_, w_f_, force_error_, torque_error_;
     ros::NodeHandle nh_;
 
