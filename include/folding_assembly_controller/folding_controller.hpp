@@ -60,6 +60,16 @@ namespace folding_assembly_controller
     **/
     void reconfig(FoldingConfig &config, uint32_t level);
 
+    /**
+      Publishes the given KDL twist using the provided publisher,
+      as a WrenchStamped message.
+
+      @param twist The KDL twist.
+      @param frame_id Frame in which the twist is expressed.
+      @param pub A publisher for WrenchStamped messages.
+    **/
+    void publishTwist(const KDL::Twist &twist, const std::string &frame_id, ros::Publisher &pub);
+
     ros::NodeHandle nh_;
     std::string rod_eef_, surface_eef_, base_frame_, rot_axis_, trans_axis_;
     folding_algorithms::KalmanEstimator kalman_filter_;
