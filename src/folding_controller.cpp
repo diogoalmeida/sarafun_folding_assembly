@@ -146,6 +146,8 @@ namespace folding_assembly_controller
     }
     else
     {
+      ROS_INFO("Entering final folding phase");
+      block_rotation_ = true;
       pc_est.translation() = kalman_filter_.estimate(p1_eig.translation(), v1_eig, p2_eig.translation(), Eigen::Matrix<double, 6, 1>::Zero(), dt.toSec());
     }
 
@@ -227,9 +229,8 @@ namespace folding_assembly_controller
 
     Eigen::Matrix<double, 14, 1> qdot;
     // need to use virtual sticks up to the end-effector location, not the grasping point. TODO: Fix this
-    if ((pose_goal_ && wrench2.norm() > max_contact_force_) || block_rotation_) // time to finish the action
+    if (pose_goal_ && block_rotation_) // time to finish the action
     {
-      block_rotation_ = true;
       Eigen::Matrix<double, 6, 1> absolute_twist;
       double pc_proj, theta_proj;
       Eigen::Vector3d p2_z, base_x, base_y, base_z;
