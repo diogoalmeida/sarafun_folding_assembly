@@ -42,14 +42,14 @@ namespace folding_algorithms{
       ROS_DEBUG_STREAM_THROTTLE(2, "Current wrench: " << force << ". Desired wrench: " << f_d_*force_direction);
     }
 
-    if (force.norm() < force_slack_)
+    if (force_error_.norm() < force_slack_)
     {
-      ROS_DEBUG_STREAM_THROTTLE(10, "Measured force norm is " << force.norm() << ". Setting to zero");
-      force = Eigen::Vector3d::Zero();
+      ROS_DEBUG_STREAM_THROTTLE(10, "Measured force norm is " << force_error_.norm() << ". Setting to zero");
+      force_error_ = Eigen::Vector3d::Zero();
     }
     else
     {
-      force = force - force_slack_*force.normalized();
+      force_error_ = force_error_ - force_slack_*force_error_.normalized();
     }
 
     torque_error_ = wrench.block<3,1>(3,0);
