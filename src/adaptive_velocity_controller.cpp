@@ -42,11 +42,26 @@ namespace folding_algorithms{
       ROS_DEBUG_STREAM_THROTTLE(2, "Current wrench: " << force << ". Desired wrench: " << f_d_*force_direction);
     }
 
+    if (force.norm() < force_slack_)
+    {
+      ROS_DEBUG_STREAM_THROTTLE(10, "Measured force norm is " << force.norm() << ". Setting to zero");
+      force = Eigen::Vector3d::Zero();
+    }
+    else
+    {
+      force = force - force_slack_*force.normalized();
+    }
+
     torque_error_ = wrench.block<3,1>(3,0);
 
     if (torque_error_.norm() < torque_slack_)
     {
+      ROS_DEBUG_STREAM_THROTTLE(10, "Measured torque norm is " << torque_error_.norm() << ". Setting to zero");
       torque_error_ = Eigen::Vector3d::Zero();
+    }
+    else
+    {
+      torque_error_ = torque_error_ - torque_slack_*torque_error_.normalized();
     }
 
     int_force_ = computeIntegralTerm(int_force_, t_, force_error_, dt);
@@ -136,6 +151,12 @@ namespace folding_algorithms{
     if (!nh_.getParam("adaptive_estimator/beta_force", beta_force_))
     {
       ROS_ERROR("Missing beta force value (adaptive_estimator/beta_force)");
+      return false;
+    }
+
+    if (!nh_.getParam("adaptive_estimator/force_slack", force_slack_))
+    {
+      ROS_ERROR("Missing force slack value (adaptive_estimator/force_slack)");
       return false;
     }
 
