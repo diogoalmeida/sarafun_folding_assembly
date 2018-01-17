@@ -129,7 +129,6 @@ namespace folding_assembly_controller
 
     Eigen::Matrix<double, 6, 1> v1_eig, wrench2, wrench2_rotated;
     kdl_manager_->getGrippingTwist(rod_eef_, current_state, v1);
-    publishTwist(p1.M*v1, "l_gripping_point", debug_twist_pub_);
     wrench_manager_.wrenchAtGrippingPoint(surface_eef_, wrench2);
     tf::wrenchEigenToKDL(wrench2, wrench_kdl);
     wrench_kdl = p2.M*wrench_kdl;
