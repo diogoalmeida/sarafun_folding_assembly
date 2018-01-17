@@ -92,6 +92,8 @@ namespace folding_assembly_controller
     marker_manager_.setMarkerColor("estimates", "rotational_estimate", 0, 1, 0);
     marker_manager_.addMarker("estimates", "contact_point_estimate", "folding_assembly", base_frame_, generic_control_toolbox::MarkerType::sphere);
     marker_manager_.setMarkerColor("estimates", "contact_point_estimate", 0, 0, 1);
+    marker_manager_.addMarker("estimates", "computed_p1", "folding_assembly", base_frame_, generic_control_toolbox::MarkerType::sphere);
+    marker_manager_.setMarkerColor("estimates", "contact_point_estimate", 1, 1, 1);
     marker_manager_.addMarker("sticks", "r1", "folding_assembly", base_frame_, generic_control_toolbox::MarkerType::arrow);
     marker_manager_.setMarkerColor("sticks", "r1", 1, 0, 0);
     marker_manager_.addMarker("sticks", "r2", "folding_assembly", base_frame_, generic_control_toolbox::MarkerType::arrow);
@@ -155,6 +157,7 @@ namespace folding_assembly_controller
     // pc_est.translation() = p1_eig.translation() + contact_offset_*p1_eig.matrix().block<3,1>(0, 2);
     // end TEMP
     marker_manager_.setMarkerPose("estimates", "contact_point_estimate", pc_est);
+    marker_manager_.setMarkerPose("estimates", "computed_p1", p1_eig);
 
     Eigen::Vector3d t_est, k_est, n_est, r1, r2, r1_in_c_frame;
     Eigen::Matrix<double, 6, 1> relative_twist;

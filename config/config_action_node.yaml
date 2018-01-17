@@ -1,5 +1,5 @@
-kinematic_chain_base_link: yumi_base_link
-contact_point_offset: 0.03
+kinematic_chain_base_link: base_link
+contact_point_offset: 0.05
 action_name: folding_controller
 
 kdl_manager:
@@ -7,22 +7,22 @@ kdl_manager:
   max_tf_attempts: 10
 
 rod_arm:
-  kdl_eef_frame: "yumi_link_7_l"
+  kdl_eef_frame: "left_link_7"
   gripping_frame: "l_gripping_point" #"gripper_l_finger_l"
   has_ft_sensor: false
   sensor_frame: ""
   sensor_topic: ""
 
 surface_arm:
-  kdl_eef_frame: "yumi_link_7_r"
+  kdl_eef_frame: "right_link_7"
   gripping_frame: "r_gripping_point"
   has_ft_sensor: true
-  sensor_frame: "optodaq_r_sensor_link"
-  sensor_topic: "/yumi/optodaq_r_compensated"
+  sensor_frame: "sensor_link"
+  sensor_topic: "/ft_sensor/ft_compensated"
 
 kf_estimator:
   Q:
-    data: [10.01, 0, 0, 0, 10.01, 0, 0, 0, 10.01]
+    data: [10000.01, 0, 0, 0, 100000.01, 0, 0, 0, 100000.01]
   R:
     data: [0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01]
 
@@ -39,7 +39,7 @@ absolute_pose_controller:
   orientation_gain: 0.1
 
 ects_controller:
-  alpha: 0.35
+  alpha: 0.0
   beta: 1
   inverse_damping: 0.0001
 
@@ -48,13 +48,13 @@ grasp:
   rotational_axis: y
 
 adaptive_estimator:
-  alpha_force: 0.0030 # 0.01
+  alpha_force: 0.00 # 0.01
   beta_force: 0.00
   force_slack: 1.0
   alpha_adapt_t: 1
-  alpha_torque: 0.5 # 0.3
+  alpha_torque: 1.5 # 0.3
   beta_torque: 0.0
   alpha_adapt_r: 1
-  torque_slack: 0.05
+  torque_slack: 0.3
   max_force: 5
   max_torque: 0.2
