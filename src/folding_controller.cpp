@@ -38,13 +38,13 @@ namespace folding_assembly_controller
       trans_axis_ = "x";
     }
 
-    if (rot_axis_ != "x" && rot_axis_ != "y" && rot_axis_ != "z")
+    if (rot_axis_ != "x" && rot_axis_ != "y" && rot_axis_ != "z" && rot_axis_ != "-x" && rot_axis_ != "-y" && rot_axis_ != "-z")
     {
       ROS_ERROR_STREAM("Invalid rotational axis parameter: " << rot_axis_);
       return false;
     }
 
-    if (trans_axis_ != "x" && trans_axis_ != "y" && trans_axis_ != "z")
+    if (trans_axis_ != "x" && trans_axis_ != "y" && trans_axis_ != "z" && trans_axis_ != "-x" && trans_axis_ != "-y" && trans_axis_ != "-z")
     {
       ROS_ERROR_STREAM("Invalid translational axis parameter: " << trans_axis_);
       return false;
@@ -253,9 +253,19 @@ namespace folding_assembly_controller
       t_init << cos(goal->adaptive_params.init_t_error), 0, sin(goal->adaptive_params.init_t_error);
     }
 
+    if (trans_axis_ == "-x")
+    {
+      t_init << -cos(goal->adaptive_params.init_t_error), 0, -sin(goal->adaptive_params.init_t_error);
+    }
+
     if (trans_axis_ == "y")
     {
       t_init << 0, cos(goal->adaptive_params.init_t_error), sin(goal->adaptive_params.init_t_error);
+    }
+
+    if (trans_axis_ == "-y")
+    {
+      t_init << 0, -cos(goal->adaptive_params.init_t_error), -sin(goal->adaptive_params.init_t_error);
     }
 
     if (trans_axis_ == "z")
@@ -263,9 +273,19 @@ namespace folding_assembly_controller
       t_init << sin(goal->adaptive_params.init_t_error), 0, cos(goal->adaptive_params.init_t_error);
     }
 
+    if (trans_axis_ == "-z")
+    {
+      t_init << -sin(goal->adaptive_params.init_t_error), 0, -cos(goal->adaptive_params.init_t_error);
+    }
+
     if (rot_axis_ == "x")
     {
       k_init << cos(goal->adaptive_params.init_k_error), sin(goal->adaptive_params.init_k_error), 0;
+    }
+
+    if (rot_axis_ == "-x")
+    {
+      k_init << -cos(goal->adaptive_params.init_k_error), -sin(goal->adaptive_params.init_k_error), 0;
     }
 
     if (rot_axis_ == "y")
@@ -273,9 +293,19 @@ namespace folding_assembly_controller
       k_init << 0, cos(goal->adaptive_params.init_k_error), sin(goal->adaptive_params.init_k_error);
     }
 
+    if (rot_axis_ == "-y")
+    {
+      k_init << 0, -cos(goal->adaptive_params.init_k_error), -sin(goal->adaptive_params.init_k_error);
+    }
+
     if (rot_axis_ == "z")
     {
       k_init << 0, sin(goal->adaptive_params.init_k_error), cos(goal->adaptive_params.init_k_error);
+    }
+
+    if (rot_axis_ == "-z")
+    {
+      k_init << 0, -sin(goal->adaptive_params.init_k_error), -cos(goal->adaptive_params.init_k_error);
     }
 
     adaptive_velocity_controller_.initEstimates(t_init, k_init);
