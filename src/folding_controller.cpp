@@ -199,7 +199,6 @@ namespace folding_assembly_controller
     }
 
     KDL::Twist relative_twist_kdl;
-    geometry_msgs::WrenchStamped twist_as_wrench;
 
     // TODO: Choose direction for force control
     tf::vectorEigenToKDL(r1, r1_kdl); // use r1 as direction for force control. Need to rotate to C-frame
@@ -214,15 +213,7 @@ namespace folding_assembly_controller
     relative_twist_kdl = p2.M*relative_twist_kdl;
     tf::twistKDLToEigen(relative_twist_kdl, relative_twist);
 
-    twist_as_wrench.header.frame_id = "p2_rotated";
-    twist_as_wrench.header.stamp = ros::Time::now();
-    twist_as_wrench.wrench.force.x = relative_twist_kdl.vel.x();
-    twist_as_wrench.wrench.force.y = relative_twist_kdl.vel.y();
-    twist_as_wrench.wrench.force.z = relative_twist_kdl.vel.z();
-    twist_as_wrench.wrench.torque.x = relative_twist_kdl.rot.x();
-    twist_as_wrench.wrench.torque.y = relative_twist_kdl.rot.y();
-    twist_as_wrench.wrench.torque.z = relative_twist_kdl.rot.z();
-    twist_pub_.publish(twist_as_wrench);
+    publishTwist(relative_twist_kdl, "p2_rotated", twist_pub_);
 
     KDL::Frame eef1, eef2;
     Eigen::Affine3d eef1_eig, eef2_eig;
@@ -384,5 +375,20 @@ namespace folding_assembly_controller
   void FoldingController::resetController()
   {
     adaptive_velocity_controller_.reset();
+  }
+
+  void FoldingController::publishTwist(const KDL::Twist &twist, const std::string &frame_id, ros::Publisher &pub)
+  {
+    geometry_msgs::WrenchStamped twist_as_wrench;
+
+    twist_as_wrench.header.frame_id = frame_id;
+    twist_as_wrench.header.stamp = ros::Time::now();
+    twist_as_wrench.wrench.force.x = twist.vel.x();
+    twist_as_wrench.wrench.force.y = twist.vel.y();
+    twist_as_wrench.wrench.force.z = twist.vel.z();
+    twist_as_wrench.wrench.torque.x = twist.rot.x();
+    twist_as_wrench.wrench.torque.y = twist.rot.y();
+    twist_as_wrench.wrench.torque.z = twist.rot.z();
+    pub.publish(twist_as_wrench);
   }
 }
