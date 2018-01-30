@@ -33,6 +33,13 @@ typedef Eigen::Matrix<double, 14, 1> Vector14d;
   class ECTSController
   {
   public:
+    /**
+      Construct an ECTS controller.
+
+      @param rod_eef key for the rod end-effector in the kdl_manager.
+      @param surface_eef key for the surface_eef in the kdl_manager.
+      @param kdl_manager Pointer to the kdl manager object, which is assumed to have been initialized with the relevant kinematic chains.
+    **/
     ECTSController(const std::string &rod_eef, const std::string &surface_eef, std::shared_ptr<generic_control_toolbox::KDLManager> kdl_manager);
     ~ECTSController();
 

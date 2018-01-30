@@ -25,11 +25,33 @@ Vector14d ECTSController::control(const sensor_msgs::JointState &state, const Ve
   Matrix12d damped_inverse;
   Vector12d total_twist;
   Vector14d q_dot, epsilon = Vector14d::Zero(), proj, out;
+  Vector3d r1_to_eef, r2_to_eef;
+  KDL::Frame eef1, eef2, p1, p2;
+  Eigen::Affine3d eef1_eig, eef2_eig, p1_eig, p2_eig;
 
   total_twist.block<6,1>(0,0) = twist_a;
   total_twist.block<6,1>(6,0) = twist_r;
 
-  J = computeECTSJacobian(state, r1, r2);
+  // get the virtual sticks to the end-effector from the virtual sticks to the gripping points
+  kdl_manager_->getGrippingPoint(rod_eef_, state, p1);
+  kdl_manager_->getGrippingPoint(surface_eef_, state, p2);
+
+  if(!kdl_manager_->getEefPose(rod_eef_, state, eef1))
+  {
+    eef1 = KDL::Frame::Identity();
+  }
+
+  if(!kdl_manager_->getEefPose(surface_eef_, state, eef2))
+  {
+    eef2 = KDL::Frame::Identity();
+  }
+
+  tf::transformKDLToEigen(p1, p1_eig);
+  tf::transformKDLToEigen(p2, p2_eig);
+  tf::transformKDLToEigen(eef1, eef1_eig);
+  tf::transformKDLToEigen(eef2, eef2_eig);
+
+  J = computeECTSJacobian(state, r1 + p1_eig.translation() - eef1_eig.translation(), r2 + p2_eig.translation() - eef2_eig.translation());
 
   damped_inverse = (J*J.transpose() + damping_*Matrix12d::Identity());
 
