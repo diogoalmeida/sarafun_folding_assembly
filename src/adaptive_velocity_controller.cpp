@@ -18,6 +18,8 @@ namespace folding_algorithms{
     {
       throw std::logic_error("Adaptive velocity controller missing initialization parameters");
     }
+
+    adaptive_feedback_pub_ = nh_.advertise<folding_assembly_controller::AdaptiveFeedback>("adaptive_feedback", 1);
   }
 
   AdaptiveController::~AdaptiveController(){}
@@ -27,6 +29,7 @@ namespace folding_algorithms{
     Eigen::Vector3d normal, torque_d, force;
     Eigen::Matrix3d I = Eigen::Matrix3d::Identity();
     Vector6d ref_twist;
+    folding_assembly_controller::AdaptiveFeedback feedback;
 
     normal = t_.cross(r_);
     torque_d = Eigen::Vector3d::Zero();
@@ -34,11 +37,11 @@ namespace folding_algorithms{
 
     if (force_direction == Eigen::Vector3d::Zero())
     {
-      force_error_ = force - f_d_*normal;
+      force_error_ = force - (I - t_*t_.transpose())*f_d_*normal;
     }
     else
     {
-      force_error_ = force - f_d_*force_direction;
+      force_error_ = force - (I - t_*t_.transpose())*f_d_*force_direction;
       ROS_DEBUG_STREAM_THROTTLE(2, "Current wrench: " << force << ". Desired wrench: " << f_d_*force_direction);
     }
 
@@ -65,6 +68,7 @@ namespace folding_algorithms{
     }
 
     int_force_ = computeIntegralTerm(int_force_, t_, force_error_, dt);
+    feedback.integral_force_norm = int_force_.norm();
     v_f_ = alpha_force_*force_error_ + beta_force_*int_force_;
 
     // TODO: Avoid windup
@@ -79,6 +83,7 @@ namespace folding_algorithms{
     t_ = t_/t_.norm();
 
     int_torque_ = computeIntegralTerm(int_torque_, r_, torque_error_, dt);
+    feedback.integral_torque_norm = int_torque_.norm();
     w_f_ = alpha_torque_*(I - r_*r_.transpose())*torque_error_ + beta_torque_*int_torque_;
 
     if (w_f_.norm() > max_torque_)
@@ -91,6 +96,7 @@ namespace folding_algorithms{
     r_ = r_ - alpha_adapt_r_*w_d*w_f_*dt;
     r_ = r_/r_.norm();
 
+    adaptive_feedback_pub_.publish(feedback);
     return ref_twist;
   }
 
@@ -104,7 +110,8 @@ namespace folding_algorithms{
   {
     Eigen::Matrix3d I = Eigen::Matrix3d::Identity();
 
-    return prev + (I - v*v.transpose())*error*dt;
+    // return prev + (I - v*v.transpose())*error*dt;
+    return prev + error*dt;
   }
 
   void AdaptiveController::getErrors(Eigen::Vector3d &force_e, Eigen::Vector3d &torque_e, Eigen::Vector3d &desired_force) const

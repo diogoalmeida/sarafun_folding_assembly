@@ -1,0 +1,2 @@
+float64 integral_force_norm
+float64 integral_torque_norm
