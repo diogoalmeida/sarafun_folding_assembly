@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <launch>
   <arg name="debug" default="false" />
-  <arg name="joint_state_topic" default="/robot/joint_states"/>
-  <arg name="joint_command_topic" default="/egmri_commanded_topic"/>
-  <arg name="description_param" default="/omg/robot_description" />
+  <arg name="joint_state_topic" default="/yumi/joint_states"/>
+  <arg name="joint_command_topic" default="/yumi/joint_command"/>
+  <arg name="description_param" default="/robot_description" />
 
   <group if="$(arg debug)">
     <env name="ROSCONSOLE_CONFIG_FILE" value="$(find folding_assembly_controller)/config/logger.config"/>
