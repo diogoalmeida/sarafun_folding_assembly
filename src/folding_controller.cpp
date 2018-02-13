@@ -121,9 +121,23 @@ namespace folding_assembly_controller
     static tf::TransformBroadcaster br;
     tf::Transform wrench_transform;
 
-    Eigen::Matrix<double, 6, 1> v1_eig, wrench2, wrench2_rotated;
+    Eigen::Matrix<double, 6, 1> v1_eig, wrench1, wrench2, wrench_total, wrench1_rotated, wrench2_rotated;
+
     kdl_manager_->getGrippingTwist(rod_eef_, current_state, v1);
-    wrench_manager_.wrenchAtGrippingPoint(surface_eef_, wrench2);
+    if (!wrench_manager_.wrenchAtGrippingPoint(rod_eef_, wrench1))
+    {
+      wrench1 = Eigen::Matrix<double, 6, 1>::Zero();
+    }
+
+    if (!wrench_manager_.wrenchAtGrippingPoint(surface_eef_, wrench2))
+    {
+      wrench2 = Eigen::Matrix<double, 6, 1>::Zero();
+    }
+
+    // Change wrench frames
+    tf::wrenchEigenToKDL(wrench1, wrench_kdl);
+    wrench_kdl = p2.M*wrench_kdl;
+    tf::wrenchKDLToEigen(wrench_kdl, wrench1_rotated);
     tf::wrenchEigenToKDL(wrench2, wrench_kdl);
     wrench_kdl = p2.M*wrench_kdl;
     tf::wrenchKDLToEigen(wrench_kdl, wrench2_rotated); // wrench2_rotated is at the gripping point p2, expressed in the base frame coordinates
@@ -134,8 +148,12 @@ namespace folding_assembly_controller
     wrench_transform.setRotation(q);
     br.sendTransform(tf::StampedTransform(wrench_transform, ros::Time::now(), base_frame_, "p2_rotated"));
 
+    Eigen::Matrix<double, 12, 1> wrenches;
+    wrenches.block<6,1>(0, 0) << wrench1_rotated;
+    wrenches.block<6,1>(6,0) << wrench2_rotated;
+
     pc_est.linear() = p1_eig.linear();
-    pc_est.translation() = kalman_filter_.estimate(p1_eig.translation(), v1_eig, p2_eig.translation(), wrench2_rotated, dt.toSec()); // The kalman filter estimates in the base frame, thus the wrench should be writen in that basis.
+    pc_est.translation() = kalman_filter_.estimate(p1_eig.translation(), v1_eig, p2_eig.translation(), wrenches, dt.toSec()); // The kalman filter estimates in the base frame, thus the wrench should be writen in that basis.
     // TEMP
     // pc_est.translation() = p1_eig.translation() + contact_offset_*p1_eig.matrix().block<3,1>(0, 2);
     // end TEMP
@@ -192,7 +210,10 @@ namespace folding_assembly_controller
     tf::vectorEigenToKDL(r1, r1_kdl); // use r1 as direction for force control. Need to rotate to C-frame
     r1_kdl = p2.M.Inverse()*r1_kdl;
     tf::vectorKDLToEigen(r1_kdl, r1_in_c_frame);
-    relative_twist = adaptive_velocity_controller_.control(wrench2, vd, wd, dt.toSec(), r1_in_c_frame.normalized()); // twist expressed at the contact point, in p2 coordinates
+
+    wrench_total.block<3,1>(0, 0) = (wrench1.block<3,1>(0, 0) - wrench2.block<3,1>(0, 0))/2;
+    wrench_total.block<3,1>(3, 0) = (wrench1.block<3,1>(3, 0) - r1.cross(wrench1.block<3,1>(0, 0)) - wrench2.block<3,1>(3, 0) + r2.cross(wrench2.block<3,1>(0, 0)))/2;
+    relative_twist = adaptive_velocity_controller_.control(wrench_total, vd, wd, dt.toSec(), r1_in_c_frame.normalized()); // twist expressed at the contact point, in p2 coordinates
 
     tf::twistEigenToKDL(relative_twist, relative_twist_kdl);
     relative_twist_kdl = p2.M*relative_twist_kdl;
