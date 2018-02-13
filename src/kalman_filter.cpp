@@ -62,7 +62,7 @@ namespace folding_algorithms{
     }
 
     Eigen::MatrixXd A(x_.rows(), x_.rows()), I(x_.rows(), x_.rows()), P_hat(x_.rows(), x_.rows()),
-                    S(wrench.rows(), wrench.rows()), C(wrench.rows(), x_.rows()), K(x_.rows(), wrench.rows()), innov(wrench.rows(), 1), y(wrench.rows(), 1);
+                    S(wrench.rows()/2, wrench.rows()/2), C(wrench.rows()/2, x_.rows()), K(x_.rows(), wrench.rows()), innov(wrench.rows(), 1), y(wrench.rows()/2, 1);
 
     I = Eigen::MatrixXd::Identity(x_.rows(), x_.rows());
 
@@ -86,7 +86,7 @@ namespace folding_algorithms{
       C.block<3,3>(0,0) = -matrix_parser_.computeSkewSymmetric(wrench.block<3,1>(0,0));
       C.block<3,3>(3,0) = -matrix_parser_.computeSkewSymmetric(wrench.block<3,1>(6,0));
       y.block<3,1>(0,0) = wrench.block<3,1>(3,0) - matrix_parser_.computeSkewSymmetric(wrench.block<3,1>(0,0))*p_e1;
-      y.block<3,1>(0,0) = wrench.block<3,1>(9,0) - matrix_parser_.computeSkewSymmetric(wrench.block<3,1>(6,0))*p_e2;
+      y.block<3,1>(3,0) = wrench.block<3,1>(9,0) - matrix_parser_.computeSkewSymmetric(wrench.block<3,1>(6,0))*p_e2;
     }
 
     // process model
@@ -95,7 +95,7 @@ namespace folding_algorithms{
     innov = y - C*x_;
     S = C*P_hat.selfadjointView<Eigen::Upper>()*C.transpose() + Q_;
 
-    K = P_hat.selfadjointView<Eigen::Upper>()*C.transpose()*S.llt().solve(I);
+    K = P_hat.selfadjointView<Eigen::Upper>()*C.transpose()*S.llt().solve(Eigen::MatrixXd::Identity(wrench.rows()/2, wrench.rows()/2));
     x_ = x_ + K*innov;
     P_= (I - K*C)*P_hat.selfadjointView<Eigen::Upper>();
 
