@@ -136,7 +136,7 @@ namespace folding_assembly_controller
 
     // Change wrench frames
     tf::wrenchEigenToKDL(wrench1, wrench_kdl);
-    wrench_kdl = p2.M*wrench_kdl;
+    wrench_kdl = p1.M*wrench_kdl;
     tf::wrenchKDLToEigen(wrench_kdl, wrench1_rotated);
     tf::wrenchEigenToKDL(wrench2, wrench_kdl);
     wrench_kdl = p2.M*wrench_kdl;
@@ -211,8 +211,12 @@ namespace folding_assembly_controller
     r1_kdl = p2.M.Inverse()*r1_kdl;
     tf::vectorKDLToEigen(r1_kdl, r1_in_c_frame);
 
-    wrench_total.block<3,1>(0, 0) = (wrench1.block<3,1>(0, 0) - wrench2.block<3,1>(0, 0))/2;
-    wrench_total.block<3,1>(3, 0) = (wrench1.block<3,1>(3, 0) - r1.cross(wrench1.block<3,1>(0, 0)) - wrench2.block<3,1>(3, 0) + r2.cross(wrench2.block<3,1>(0, 0)))/2;
+    // must convert wrench1 to eef2
+    tf::wrenchEigenToKDL(wrench1, wrench_kdl);
+    wrench_kdl = p2.M.Inverse()*p1.M*wrench_kdl;
+    tf::wrenchKDLToEigen(wrench_kdl, wrench1_rotated);
+    wrench_total.block<3,1>(0, 0) = (wrench1_rotated.block<3,1>(0, 0) - wrench2.block<3,1>(0, 0))/2;
+    wrench_total.block<3,1>(3, 0) = (wrench1_rotated.block<3,1>(3, 0) - r1.cross(wrench1_rotated.block<3,1>(0, 0)) - wrench2.block<3,1>(3, 0) + r2.cross(wrench2.block<3,1>(0, 0)))/2;
     relative_twist = adaptive_velocity_controller_.control(wrench_total, vd, wd, dt.toSec(), r1_in_c_frame.normalized()); // twist expressed at the contact point, in p2 coordinates
 
     tf::twistEigenToKDL(relative_twist, relative_twist_kdl);
