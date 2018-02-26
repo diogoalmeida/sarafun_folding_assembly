@@ -60,6 +60,12 @@ namespace folding_assembly_controller
       return false;
     }
     
+    if (!nh_.getParam("base_align", base_align_))
+	{
+	  ROS_ERROR("Missing base align axis");
+	  return false;
+	}
+    
     if (!nh_.getParam("initial_wait_time", wait_time_))
     {
       ROS_WARN("Missing initial_wait_time, using default");
@@ -211,13 +217,13 @@ namespace folding_assembly_controller
     }
 
     pc_est.linear() = p1_eig.linear();
-    if (abs(prev_theta_proj_) > theta_lim_ || !compute_control) // For small angles we antecipate that the single contact point assumption is violated
+    if (!final_rotation_ && !block_rotation_) // For small angles we antecipate that the single contact point assumption is violated
     {
       pc_est.translation() = kalman_filter_.estimate(p1_eig.translation(), v1_eig, p2_eig.translation(), wrench2_rotated, dt.toSec()); // The kalman filter estimates in the base frame, thus the wrench should be writen in that basis.
     }
     else
     {
-      ROS_INFO("Entering final folding phase");
+      ROS_INFO_ONCE("Entering final folding phase");
       block_rotation_ = true;
       pc_est.translation() = kalman_filter_.estimate(p1_eig.translation(), v1_eig, p2_eig.translation(), Eigen::Matrix<double, 6, 1>::Zero(), dt.toSec());
     }
@@ -266,25 +272,32 @@ namespace folding_assembly_controller
     ROS_DEBUG_STREAM("Wd: " << wd);
     marker_manager_.setMarkerPoints("pose_feedback", "pose_target", target_point, p1_eig.translation());
     marker_manager_.setMarkerPoints("pose_feedback", "current_pose", p2_eig.translation() + r2_plane + pc_proj*t_est,  p1_eig.translation());
-    feedback_.current_angle = theta_proj;
+    //feedback_.current_angle = theta_proj;
     
     KDL::Vector align1, align2;
     double angle = 0.0;
     
     align1 = getAxis(p1, p1_align_);
+// 	ROS_INFO_STREAM("P1 align axis: " << align1.x() << ", " << align1.y() << ", " << align1.z());
     align2 = getAxis(p2, p2_align_);
-    
-    if (compute_control)
+// 	ROS_INFO_STREAM("P2 align axis: " << align2.x() << ", " << align2.y() << ", " << align2.z());
+// 	
+// 	ROS_INFO_STREAM("Dot: " << KDL::dot(align1, align2));
+// 	ROS_INFO_STREAM("Angle: " << acos(KDL::dot(align1, align2)));
+//     ROS_INFO_STREAM("Angle: " << abs(acos(KDL::dot(align1, align2))));
+	
+    if (compute_control && !block_rotation_)
     {
       if (pose_goal_)
       {
         relative_pose_controller_.computeControl(pc_proj, theta_proj, pc_goal_, thetac_goal_, vd, wd);
         feedback_.phase = "Pose regulation";
         angle = acos(KDL::dot(align1, align2));
+		prev_theta_proj_ = angle;
         feedback_.current_angle = angle;
-        if (abs(angle) < angle_goal_threshold_)
+        if (fabs(angle) < angle_goal_threshold_)
         {
-          action_server_->setSucceeded();
+          final_rotation_ = true;
         }
       }
       else
@@ -326,14 +339,18 @@ namespace folding_assembly_controller
     {
       Eigen::Matrix<double, 6, 1> absolute_twist;
       double pc_proj, theta_proj;
+	  KDL::Frame base;
+	  KDL::Vector align_base;
       Eigen::Vector3d p2_z, base_x, base_y, base_z;
-      pc_proj = r2.dot(t_est);
-      p2_z = p2_eig.matrix().block<3,1>(0, 2);
-      base_x << 1, 0, 0;
-      base_y << 0, 1, 0;
-      base_z << 0, 0, 1;
-      theta_proj = atan2(p2_z.dot(base_z), p2_z.dot(base_y)); // want vector from contact to end-effector
+	  base_x << 1, 0, 0;
+	  base_y << 0, 1, 0;
+	  base_z << 0, 0, 1;
+	  
+	  align_base = getAxis(base, base_align_);
+      theta_proj = acos(KDL::dot(align2, align_base)); // want vector from contact to end-effector
       ROS_DEBUG_STREAM("Theta proj: " << theta_proj);
+	  feedback_.phase = "Final alignment";
+	  feedback_.current_angle = theta_proj;
       absolute_pose_controller_.computeControl(pc_proj, theta_proj, 0.0, 0.0, vd, wd);
       absolute_twist.block<3,1>(0, 0) = vd*base_y;
       absolute_twist.block<3,1>(3, 0) = wd*base_x;
@@ -469,6 +486,7 @@ namespace folding_assembly_controller
     kdl_manager_->getGrippingPoint(rod_eef_, lastState(sensor_msgs::JointState()), p1);
     tf::transformKDLToEigen(p1, p1_eig);
     kalman_filter_.initialize(p1_eig.translation() + contact_offset_*p1_eig.matrix().block<3,1>(0, 2));
+	final_rotation_ = false;
     start_time_ = ros::Time::now();
 
     return true;

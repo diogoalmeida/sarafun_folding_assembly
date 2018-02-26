@@ -84,7 +84,7 @@ namespace folding_assembly_controller
     KDL::Vector getAxis(const KDL::Frame &pose, const std::string &axis) const;
 
     ros::NodeHandle nh_;
-    std::string rod_eef_, surface_eef_, base_frame_, rot_axis_, trans_axis_, p1_align_, p2_align_;
+    std::string rod_eef_, surface_eef_, base_frame_, rot_axis_, trans_axis_, p1_align_, p2_align_, base_align_;
     folding_algorithms::KalmanEstimator kalman_filter_;
     folding_algorithms::FoldingPoseController relative_pose_controller_, absolute_pose_controller_;
     folding_algorithms::AdaptiveController adaptive_velocity_controller_;
@@ -95,7 +95,7 @@ namespace folding_assembly_controller
     std::shared_ptr<dynamic_reconfigure::Server<FoldingConfig> > dynamic_reconfigure_server_;
     dynamic_reconfigure::Server<FoldingConfig>::CallbackType dynamic_reconfigure_callback_;
     double pc_goal_, thetac_goal_, vd_, wd_, contact_offset_, prev_theta_proj_, theta_lim_, max_contact_force_, angle_goal_threshold_, wait_time_;
-    bool pose_goal_, block_rotation_;
+    bool pose_goal_, block_rotation_, final_rotation_;
     ros::Publisher twist_pub_, debug_twist_pub_;
     ros::Time start_time_;
   };

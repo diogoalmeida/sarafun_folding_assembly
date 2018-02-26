@@ -1,7 +1,8 @@
 kinematic_chain_base_link: base_link
 contact_point_offset: 0.05
 action_name: folding_controller
-initial_wait_time: 2
+initial_wait_time: 0
+base_align: -y
 
 kdl_manager:
   eps: 0.001
@@ -13,7 +14,7 @@ rod_arm:
   has_ft_sensor: false
   sensor_frame: ""
   sensor_topic: ""
-  align_axis: x
+  align_axis: z
 
 surface_arm:
   kdl_eef_frame: "right_link_7"
@@ -21,7 +22,7 @@ surface_arm:
   has_ft_sensor: true
   sensor_frame: "sensor_link"
   sensor_topic: "/ft_sensor/ft_compensated"
-  align_axis: x
+  align_axis: y
 
 kf_estimator:
   Q:
@@ -30,16 +31,16 @@ kf_estimator:
     data: [0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01]
 
 relative_pose_controller:
-  vd_max: 0.01
-  wd_max: 0.01
-  position_gain: 0.0
-  orientation_gain: 0.1
+  vd_max: 0.02
+  wd_max: 0.05
+  position_gain: -0.1
+  orientation_gain: -0.1
 
 absolute_pose_controller:
   vd_max: 0.0
-  wd_max: 0.01
-  position_gain: 0.1
-  orientation_gain: 0.1
+  wd_max: 0.02
+  position_gain: -0.1
+  orientation_gain: -0.1
 
 ects_controller:
   alpha: 0.5
