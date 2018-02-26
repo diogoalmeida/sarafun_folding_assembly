@@ -228,9 +228,6 @@ namespace folding_assembly_controller
       pc_est.translation() = kalman_filter_.estimate(p1_eig.translation(), v1_eig, p2_eig.translation(), Eigen::Matrix<double, 6, 1>::Zero(), dt.toSec());
     }
 
-    // TEMP
-    // pc_est.translation() = p1_eig.translation() + contact_offset_*p1_eig.matrix().block<3,1>(0, 2);
-    // end TEMP
     marker_manager_.setMarkerPose("estimates", "contact_point_estimate", pc_est);
     marker_manager_.setMarkerPose("estimates", "computed_p1", p1_eig);
 
@@ -259,32 +256,12 @@ namespace folding_assembly_controller
     double pc_proj, theta_proj;
     Eigen::Vector3d r2_y, pose_target_dir, target_point, r2_plane, r1_plane;
     
-    // ignore virtual stick components along rotational axis
-    r2_plane = (Eigen::Matrix3d::Identity() - k_est*k_est.transpose())*r2;
-    r1_plane = (Eigen::Matrix3d::Identity() - k_est*k_est.transpose())*r1;
-    pc_proj = r2_plane.dot(t_est);
-    r2_y = r2 - r2.dot(t_est)*t_est;
-    theta_proj = atan2(-r1_plane.dot(n_est), -r1_plane.dot(t_est)); // want vector from contact to end-effector
-    target_point = p2_eig.translation() + pc_goal_*t_est + r2_plane;
-    pose_target_dir = t_est*cos(thetac_goal_) + n_est*sin(thetac_goal_);
-    ROS_DEBUG_STREAM("Theta proj: " << theta_proj);
-    prev_theta_proj_ = theta_proj;
-    ROS_DEBUG_STREAM("Wd: " << wd);
-    marker_manager_.setMarkerPoints("pose_feedback", "pose_target", target_point, p1_eig.translation());
-    marker_manager_.setMarkerPoints("pose_feedback", "current_pose", p2_eig.translation() + r2_plane + pc_proj*t_est,  p1_eig.translation());
-    //feedback_.current_angle = theta_proj;
-    
     KDL::Vector align1, align2;
     double angle = 0.0;
     
     align1 = getAxis(p1, p1_align_);
 // 	ROS_INFO_STREAM("P1 align axis: " << align1.x() << ", " << align1.y() << ", " << align1.z());
     align2 = getAxis(p2, p2_align_);
-// 	ROS_INFO_STREAM("P2 align axis: " << align2.x() << ", " << align2.y() << ", " << align2.z());
-// 	
-// 	ROS_INFO_STREAM("Dot: " << KDL::dot(align1, align2));
-// 	ROS_INFO_STREAM("Angle: " << acos(KDL::dot(align1, align2)));
-//     ROS_INFO_STREAM("Angle: " << abs(acos(KDL::dot(align1, align2))));
 	
     if (compute_control && !block_rotation_)
     {
@@ -293,7 +270,7 @@ namespace folding_assembly_controller
         relative_pose_controller_.computeControl(pc_proj, theta_proj, pc_goal_, thetac_goal_, vd, wd);
         feedback_.phase = "Pose regulation";
         angle = acos(KDL::dot(align1, align2));
-		prev_theta_proj_ = angle;
+        prev_theta_proj_ = angle;
         feedback_.current_angle = angle;
         if (fabs(angle) < angle_goal_threshold_)
         {
