@@ -37,6 +37,12 @@ namespace folding_assembly_controller
       ROS_WARN("Missing grasp/translational_axis parameter, using default");
       trans_axis_ = "x";
     }
+    
+    if (!nh_.getParam("initial_wait_time", wait_time_))
+    {
+      ROS_WARN("Missing initial_wait_time, using default");
+      wait_time_ = 5.0;
+    }
 
     if (rot_axis_ != "x" && rot_axis_ != "y" && rot_axis_ != "z" && rot_axis_ != "-x" && rot_axis_ != "-y" && rot_axis_ != "-z")
     {
@@ -116,6 +122,7 @@ namespace folding_assembly_controller
     sensor_msgs::JointState ret = current_state;
     KDL::Frame p1, p2;
     Eigen::Affine3d p1_eig, p2_eig, pc_est;
+    bool compute_control = false;
 
     kdl_manager_->getGrippingPoint(rod_eef_, current_state, p1);
     kdl_manager_->getGrippingPoint(surface_eef_, current_state, p2);
@@ -139,9 +146,14 @@ namespace folding_assembly_controller
     q.setRPY(0, 0, 0);
     wrench_transform.setRotation(q);
     br.sendTransform(tf::StampedTransform(wrench_transform, ros::Time::now(), base_frame_, "p2_rotated"));
+    
+    if ((ros::Time::now() - start_time_).toSec() > wait_time_)
+    {
+      compute_control = true;
+    }
 
     pc_est.linear() = p1_eig.linear();
-    if (abs(prev_theta_proj_) > theta_lim_) // For small angles we antecipate that the single contact point assumption is violated
+    if (abs(prev_theta_proj_) > theta_lim_ || !compute_control) // For small angles we antecipate that the single contact point assumption is violated
     {
       pc_est.translation() = kalman_filter_.estimate(p1_eig.translation(), v1_eig, p2_eig.translation(), wrench2_rotated, dt.toSec()); // The kalman filter estimates in the base frame, thus the wrench should be writen in that basis.
     }
@@ -180,37 +192,41 @@ namespace folding_assembly_controller
     marker_manager_.setMarkerPoints("sticks", "r1", p1_eig.translation(), pc_est.translation());
     marker_manager_.setMarkerPoints("sticks", "r2", p2_eig.translation(), pc_est.translation());
 
-    if (pose_goal_)
+    double pc_proj, theta_proj;
+    Eigen::Vector3d r2_y, pose_target_dir, target_point, r2_plane, r1_plane;
+    
+    // ignore virtual stick components along rotational axis
+    r2_plane = (Eigen::Matrix3d::Identity() - k_est*k_est.transpose())*r2;
+    r1_plane = (Eigen::Matrix3d::Identity() - k_est*k_est.transpose())*r1;
+    pc_proj = r2_plane.dot(t_est);
+    r2_y = r2 - r2.dot(t_est)*t_est;
+    theta_proj = atan2(-r1_plane.dot(n_est), -r1_plane.dot(t_est)); // want vector from contact to end-effector
+    target_point = p2_eig.translation() + pc_goal_*t_est + r2_plane;
+    pose_target_dir = t_est*cos(thetac_goal_) + n_est*sin(thetac_goal_);
+    ROS_DEBUG_STREAM("Theta proj: " << theta_proj);
+    prev_theta_proj_ = theta_proj;
+    ROS_DEBUG_STREAM("Wd: " << wd);
+    marker_manager_.setMarkerPoints("pose_feedback", "pose_target", target_point, p1_eig.translation());
+    marker_manager_.setMarkerPoints("pose_feedback", "current_pose", p2_eig.translation() + r2_plane + pc_proj*t_est,  p1_eig.translation());
+    feedback_.current_angle = theta_proj;
+    
+    if (compute_control)
     {
-      double pc_proj, theta_proj;
-      Eigen::Vector3d r2_y, pose_target_dir, target_point, r2_plane, r1_plane;
-      
-      // ignore virtual stick components along rotational axis
-      r2_plane = (Eigen::Matrix3d::Identity() - k_est*k_est.transpose())*r2;
-      r1_plane = (Eigen::Matrix3d::Identity() - k_est*k_est.transpose())*r1;
-      pc_proj = r2_plane.dot(t_est);
-      r2_y = r2 - r2.dot(t_est)*t_est;
-      theta_proj = atan2(-r1_plane.dot(n_est), -r1_plane.dot(t_est)); // want vector from contact to end-effector
-      target_point = p2_eig.translation() + pc_goal_*t_est + r2_plane;
-      pose_target_dir = t_est*cos(thetac_goal_) + n_est*sin(thetac_goal_);
-      ROS_DEBUG_STREAM("Theta proj: " << theta_proj);
-      prev_theta_proj_ = theta_proj;
-      relative_pose_controller_.computeControl(pc_proj, theta_proj, pc_goal_, thetac_goal_, vd, wd);
-      ROS_DEBUG_STREAM("Wd: " << wd);
-      marker_manager_.setMarkerPoints("pose_feedback", "pose_target", target_point, p1_eig.translation());
-      marker_manager_.setMarkerPoints("pose_feedback", "current_pose", p2_eig.translation() + r2_plane + pc_proj*t_est,  p1_eig.translation());
-      feedback_.phase = "Pose regulation";
-      feedback_.current_angle = theta_proj;
-      if (abs(theta_proj - thetac_goal_) < angle_goal_threshold_)
+      if (pose_goal_)
       {
-        action_server_->setSucceeded();
+        relative_pose_controller_.computeControl(pc_proj, theta_proj, pc_goal_, thetac_goal_, vd, wd);
+        feedback_.phase = "Pose regulation";
+        if (abs(prev_theta_proj_ - thetac_goal_) < angle_goal_threshold_)
+        {
+          action_server_->setSucceeded();
+        }
       }
-    }
-    else
-    {
-      vd = vd_;
-      wd = wd_;
-      feedback_.phase = "Velocity control";
+      else
+      {
+        vd = vd_;
+        wd = wd_;
+        feedback_.phase = "Velocity control";
+      }  
     }
 
     KDL::Twist relative_twist_kdl;
@@ -387,6 +403,7 @@ namespace folding_assembly_controller
     kdl_manager_->getGrippingPoint(rod_eef_, lastState(sensor_msgs::JointState()), p1);
     tf::transformKDLToEigen(p1, p1_eig);
     kalman_filter_.initialize(p1_eig.translation() + contact_offset_*p1_eig.matrix().block<3,1>(0, 2));
+    start_time_ = ros::Time::now();
 
     return true;
   }
