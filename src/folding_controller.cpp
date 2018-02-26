@@ -217,14 +217,13 @@ namespace folding_assembly_controller
     }
 
     pc_est.linear() = p1_eig.linear();
-    if (!final_rotation_ && !block_rotation_) // For small angles we antecipate that the single contact point assumption is violated
+    if (!final_rotation_) // For small angles we antecipate that the single contact point assumption is violated
     {
       pc_est.translation() = kalman_filter_.estimate(p1_eig.translation(), v1_eig, p2_eig.translation(), wrench2_rotated, dt.toSec()); // The kalman filter estimates in the base frame, thus the wrench should be writen in that basis.
     }
     else
     {
       ROS_INFO_ONCE("Entering final folding phase");
-      block_rotation_ = true;
       pc_est.translation() = kalman_filter_.estimate(p1_eig.translation(), v1_eig, p2_eig.translation(), Eigen::Matrix<double, 6, 1>::Zero(), dt.toSec());
     }
 
@@ -258,7 +257,7 @@ namespace folding_assembly_controller
     
     KDL::Vector align1, align2;
     Eigen::Vector3d align1_eig, align2_eig;
-    double angle = 0.0;
+    double sign = 0.0;
     
     align1 = getAxis(p1, p1_align_);
 // 	ROS_INFO_STREAM("P1 align axis: " << align1.x() << ", " << align1.y() << ", " << align1.z());
@@ -266,18 +265,22 @@ namespace folding_assembly_controller
     tf::vectorKDLToEigen(align1, align1_eig);
     tf::vectorKDLToEigen(align2, align2_eig);
     align1_eig = (Eigen::Matrix3d::Identity() - k_est*k_est.transpose())*align1_eig; // project on rotation plane
+    align1_eig = align1_eig.normalized();
     align2_eig = (Eigen::Matrix3d::Identity() - k_est*k_est.transpose())*align2_eig;
+	align2_eig = align2_eig.normalized();
+	sign = align1_eig.cross(align2_eig).dot(k_est);
 	
-    if (compute_control && !block_rotation_)
+    if (compute_control && !final_rotation_)
     {
       if (pose_goal_)
       {
-        relative_pose_controller_.computeControl(pc_proj, theta_proj, pc_goal_, thetac_goal_, vd, wd);
         feedback_.phase = "Pose regulation";
-        angle = acos(align1_eig.dot(align2_eig));
-        prev_theta_proj_ = angle;
-        feedback_.current_angle = angle;
-        if (fabs(angle) < angle_goal_threshold_)
+        theta_proj = sign/fabs(sign)*acos(align1_eig.dot(align2_eig));
+		pc_proj = pc_est.translation().dot(align2_eig);
+        prev_theta_proj_ = theta_proj;
+        feedback_.current_angle = theta_proj;
+		relative_pose_controller_.computeControl(pc_proj, theta_proj, pc_goal_, thetac_goal_, vd, wd);
+        if (fabs(theta_proj) < angle_goal_threshold_)
         {
           final_rotation_ = true;
         }
@@ -317,7 +320,7 @@ namespace folding_assembly_controller
 
     Eigen::Matrix<double, 14, 1> qdot;
     // need to use virtual sticks up to the end-effector location, not the grasping point. TODO: Fix this
-    if (pose_goal_ && block_rotation_) // time to finish the action
+    if (pose_goal_ && final_rotation_) // time to finish the action
     {
       Eigen::Matrix<double, 6, 1> absolute_twist;
       double pc_proj, theta_proj;
@@ -331,7 +334,9 @@ namespace folding_assembly_controller
       align_base = getAxis(base, base_align_);
       tf::vectorKDLToEigen(align_base, align_base_eig);
       align_base_eig = (Eigen::Matrix3d::Identity() - k_est*k_est.transpose())*align_base_eig;
-      theta_proj = acos(align2_eig.dot(align_base_eig)); // want vector from contact to end-effector
+	  align_base_eig = align_base_eig.normalized();
+	  sign = align_base_eig.cross(align2_eig).dot(k_est);
+      theta_proj = sign/fabs(sign)*acos(align2_eig.dot(align_base_eig)); // want vector from contact to end-effector
       ROS_DEBUG_STREAM("Theta proj: " << theta_proj);
       feedback_.phase = "Final alignment";
       feedback_.current_angle = theta_proj;

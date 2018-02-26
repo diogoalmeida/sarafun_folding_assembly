@@ -34,11 +34,11 @@ relative_pose_controller:
   vd_max: 0.02
   wd_max: 0.05
   position_gain: -0.1
-  orientation_gain: -0.1
+  orientation_gain: 0.1
 
 absolute_pose_controller:
   vd_max: 0.0
-  wd_max: 0.02
+  wd_max: 0.05
   position_gain: -0.1
   orientation_gain: -0.1
 
