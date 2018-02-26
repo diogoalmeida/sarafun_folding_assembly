@@ -13,6 +13,7 @@ rod_arm:
   has_ft_sensor: false
   sensor_frame: ""
   sensor_topic: ""
+  align_axis: x
 
 surface_arm:
   kdl_eef_frame: "right_link_7"
@@ -20,6 +21,7 @@ surface_arm:
   has_ft_sensor: true
   sensor_frame: "sensor_link"
   sensor_topic: "/ft_sensor/ft_compensated"
+  align_axis: x
 
 kf_estimator:
   Q:

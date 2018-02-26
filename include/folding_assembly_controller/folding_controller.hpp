@@ -69,9 +69,22 @@ namespace folding_assembly_controller
       @param pub A publisher for WrenchStamped messages.
     **/
     void publishTwist(const KDL::Twist &twist, const std::string &frame_id, ros::Publisher &pub);
+    
+    /**
+      Checks if the axis string is valid.
+      
+      @param axis the axis string.
+      @return False is axis is not valid, true otherwise.
+    **/
+    bool checkAxis(const std::string &axis) const;
+    
+    /**
+      Return the axis vector given by the axis parameter.
+    **/
+    KDL::Vector getAxis(const KDL::Frame &pose, const std::string &axis) const;
 
     ros::NodeHandle nh_;
-    std::string rod_eef_, surface_eef_, base_frame_, rot_axis_, trans_axis_;
+    std::string rod_eef_, surface_eef_, base_frame_, rot_axis_, trans_axis_, p1_align_, p2_align_;
     folding_algorithms::KalmanEstimator kalman_filter_;
     folding_algorithms::FoldingPoseController relative_pose_controller_, absolute_pose_controller_;
     folding_algorithms::AdaptiveController adaptive_velocity_controller_;

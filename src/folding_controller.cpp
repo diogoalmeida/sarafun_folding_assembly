@@ -17,6 +17,16 @@ namespace folding_assembly_controller
 
   FoldingController::~FoldingController() {}
 
+  bool FoldingController::checkAxis(const std::string &axis) const
+  {
+    if (axis != "x" && axis != "y" && axis != "z" && axis != "-x" && axis != "-y" && axis != "-z")
+    {
+      return false;
+    }
+    
+    return true;
+  }
+  
   bool FoldingController::init()
   {
     std::string rod_gripping_frame, surface_gripping_frame;
@@ -38,19 +48,31 @@ namespace folding_assembly_controller
       trans_axis_ = "x";
     }
     
+    if (!nh_.getParam("rod_arm/align_axis", p1_align_))
+    {
+      ROS_ERROR("Missing rod arm align axis");
+      return false;
+    }
+    
+    if (!nh_.getParam("surface_arm/align_axis", p2_align_))
+    {
+      ROS_ERROR("Missing surface arm align axis");
+      return false;
+    }
+    
     if (!nh_.getParam("initial_wait_time", wait_time_))
     {
       ROS_WARN("Missing initial_wait_time, using default");
       wait_time_ = 5.0;
     }
 
-    if (rot_axis_ != "x" && rot_axis_ != "y" && rot_axis_ != "z" && rot_axis_ != "-x" && rot_axis_ != "-y" && rot_axis_ != "-z")
+    if (!checkAxis(rot_axis_))
     {
       ROS_ERROR_STREAM("Invalid rotational axis parameter: " << rot_axis_);
       return false;
     }
 
-    if (trans_axis_ != "x" && trans_axis_ != "y" && trans_axis_ != "z" && trans_axis_ != "-x" && trans_axis_ != "-y" && trans_axis_ != "-z")
+    if (!checkAxis(trans_axis_))
     {
       ROS_ERROR_STREAM("Invalid translational axis parameter: " << trans_axis_);
       return false;
@@ -115,6 +137,42 @@ namespace folding_assembly_controller
     twist_pub_ = nh_.advertise<geometry_msgs::WrenchStamped>(ros::this_node::getName() + "/adaptive_twist", 1);
     debug_twist_pub_ = nh_.advertise<geometry_msgs::WrenchStamped>(ros::this_node::getName() + "/gripping_point_twist", 1);
     return true;
+  }
+  
+  KDL::Vector FoldingController::getAxis(const KDL::Frame &pose, const std::string &axis) const
+  {
+    if (axis == "x")
+    {
+      return pose.M.UnitX();
+    }
+    
+    if (axis == "-x")
+    {
+      return -pose.M.UnitX();
+    }
+    
+    if (axis =="y")
+    {
+      return pose.M.UnitY();
+    }
+    
+    if (axis == "-y")
+    {
+      return -pose.M.UnitY();
+    }
+    
+    if (axis == "z")
+    {
+      return pose.M.UnitZ();
+    }
+    
+    if (axis == "-z")
+    {
+      return -pose.M.UnitZ();
+    }
+    
+    ROS_ERROR("Got invalid axis name, returning default");
+    return pose.M.UnitX();
   }
 
   sensor_msgs::JointState FoldingController::controlAlgorithm(const sensor_msgs::JointState &current_state, const ros::Duration &dt)
@@ -210,13 +268,21 @@ namespace folding_assembly_controller
     marker_manager_.setMarkerPoints("pose_feedback", "current_pose", p2_eig.translation() + r2_plane + pc_proj*t_est,  p1_eig.translation());
     feedback_.current_angle = theta_proj;
     
+    KDL::Vector align1, align2;
+    double angle = 0.0;
+    
+    align1 = getAxis(p1, p1_align_);
+    align2 = getAxis(p2, p2_align_);
+    
     if (compute_control)
     {
       if (pose_goal_)
       {
         relative_pose_controller_.computeControl(pc_proj, theta_proj, pc_goal_, thetac_goal_, vd, wd);
         feedback_.phase = "Pose regulation";
-        if (abs(prev_theta_proj_ - thetac_goal_) < angle_goal_threshold_)
+        angle = acos(KDL::dot(align1, align2));
+        feedback_.current_angle = angle;
+        if (abs(angle) < angle_goal_threshold_)
         {
           action_server_->setSucceeded();
         }
