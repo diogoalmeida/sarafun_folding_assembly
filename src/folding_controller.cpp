@@ -166,18 +166,27 @@ namespace folding_assembly_controller
     if (pose_goal_)
     {
       double pc_proj, theta_proj;
-      Eigen::Vector3d r2_y, pose_target_dir, target_point;
-      pc_proj = r2.dot(t_est);
+      Eigen::Vector3d r2_y, pose_target_dir, target_point, r2_plane, r1_plane;
+      
+      // ignore virtual stick components along rotational axis
+      r2_plane = (Eigen::Matrix3d::Identity() - k_est*k_est.transpose())*r2;
+      r1_plane = (Eigen::Matrix3d::Identity() - k_est*k_est.transpose())*r1;
+      pc_proj = r2_plane.dot(t_est);
       r2_y = r2 - r2.dot(t_est)*t_est;
-      theta_proj = atan2(-r1.dot(n_est), -r1.dot(t_est)); // want vector from contact to end-effector
-      target_point = p2_eig.translation() + pc_goal_*t_est + r2_y;
+      theta_proj = atan2(-r1_plane.dot(n_est), -r1_plane.dot(t_est)); // want vector from contact to end-effector
+      target_point = p2_eig.translation() + pc_goal_*t_est + r2_plane;
       pose_target_dir = t_est*cos(thetac_goal_) + n_est*sin(thetac_goal_);
       ROS_DEBUG_STREAM("Theta proj: " << theta_proj);
       pose_controller_.computeControl(pc_proj, theta_proj, pc_goal_, thetac_goal_, vd, wd);
       ROS_DEBUG_STREAM("Wd: " << wd);
       marker_manager_.setMarkerPoints("pose_feedback", "pose_target", target_point, p1_eig.translation());
-      marker_manager_.setMarkerPoints("pose_feedback", "current_pose", p2_eig.translation() + r2_y + pc_proj*t_est,  p1_eig.translation());
+      marker_manager_.setMarkerPoints("pose_feedback", "current_pose", p2_eig.translation() + r2_plane + pc_proj*t_est,  p1_eig.translation());
       feedback_.phase = "Pose regulation";
+      feedback_.current_angle = theta_proj;
+      if (abs(theta_proj - thetac_goal_) < angle_goal_threshold_)
+      {
+        action_server_->setSucceeded();
+      }
     }
     else
     {
@@ -316,6 +325,7 @@ namespace folding_assembly_controller
       pose_goal_ = true;
       pc_goal_ = goal->pose_goal.pd;
       thetac_goal_ = goal->pose_goal.thetad;
+      angle_goal_threshold_ = goal->pose_goal.angle_goal_threshold;
     }
     else
     {

@@ -1,2 +1,3 @@
 float64 pd
 float64 thetad
+float64 angle_goal_threshold
