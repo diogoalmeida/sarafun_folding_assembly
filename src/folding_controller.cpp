@@ -257,11 +257,16 @@ namespace folding_assembly_controller
     Eigen::Vector3d r2_y, pose_target_dir, target_point, r2_plane, r1_plane;
     
     KDL::Vector align1, align2;
+    Eigen::Vector3d align1_eig, align2_eig;
     double angle = 0.0;
     
     align1 = getAxis(p1, p1_align_);
 // 	ROS_INFO_STREAM("P1 align axis: " << align1.x() << ", " << align1.y() << ", " << align1.z());
     align2 = getAxis(p2, p2_align_);
+    tf::vectorKDLToEigen(align1, align1_eig);
+    tf::vectorKDLToEigen(align2, align2_eig);
+    align1_eig = (Eigen::Matrix3d::Identity() - k_est*k_est.transpose())*align1_eig; // project on rotation plane
+    align2_eig = (Eigen::Matrix3d::Identity() - k_est*k_est.transpose())*align2_eig;
 	
     if (compute_control && !block_rotation_)
     {
@@ -269,7 +274,7 @@ namespace folding_assembly_controller
       {
         relative_pose_controller_.computeControl(pc_proj, theta_proj, pc_goal_, thetac_goal_, vd, wd);
         feedback_.phase = "Pose regulation";
-        angle = acos(KDL::dot(align1, align2));
+        angle = acos(align1_eig.dot(align2_eig));
         prev_theta_proj_ = angle;
         feedback_.current_angle = angle;
         if (fabs(angle) < angle_goal_threshold_)
@@ -316,18 +321,20 @@ namespace folding_assembly_controller
     {
       Eigen::Matrix<double, 6, 1> absolute_twist;
       double pc_proj, theta_proj;
-	  KDL::Frame base;
-	  KDL::Vector align_base;
-      Eigen::Vector3d p2_z, base_x, base_y, base_z;
-	  base_x << 1, 0, 0;
-	  base_y << 0, 1, 0;
-	  base_z << 0, 0, 1;
-	  
-	  align_base = getAxis(base, base_align_);
-      theta_proj = acos(KDL::dot(align2, align_base)); // want vector from contact to end-effector
+      KDL::Frame base;
+      KDL::Vector align_base;
+      Eigen::Vector3d p2_z, base_x, base_y, base_z, align_base_eig;
+      base_x << 1, 0, 0;
+      base_y << 0, 1, 0;
+      base_z << 0, 0, 1;
+      
+      align_base = getAxis(base, base_align_);
+      tf::vectorKDLToEigen(align_base, align_base_eig);
+      align_base_eig = (Eigen::Matrix3d::Identity() - k_est*k_est.transpose())*align_base_eig;
+      theta_proj = acos(align2_eig.dot(align_base_eig)); // want vector from contact to end-effector
       ROS_DEBUG_STREAM("Theta proj: " << theta_proj);
-	  feedback_.phase = "Final alignment";
-	  feedback_.current_angle = theta_proj;
+      feedback_.phase = "Final alignment";
+      feedback_.current_angle = theta_proj;
       absolute_pose_controller_.computeControl(pc_proj, theta_proj, 0.0, 0.0, vd, wd);
       absolute_twist.block<3,1>(0, 0) = vd*base_y;
       absolute_twist.block<3,1>(3, 0) = wd*base_x;
