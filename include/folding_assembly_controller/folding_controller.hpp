@@ -81,7 +81,7 @@ namespace folding_assembly_controller
     std::unique_ptr<folding_algorithms::ECTSController> ects_controller_;
     std::shared_ptr<dynamic_reconfigure::Server<FoldingConfig> > dynamic_reconfigure_server_;
     dynamic_reconfigure::Server<FoldingConfig>::CallbackType dynamic_reconfigure_callback_;
-    double pc_goal_, thetac_goal_, vd_, wd_, contact_offset_, prev_theta_proj_, theta_lim_, max_contact_force_;
+    double pc_goal_, thetac_goal_, vd_, wd_, contact_offset_, prev_theta_proj_, theta_lim_, max_contact_force_, angle_goal_threshold_;
     bool pose_goal_, block_rotation_;
     ros::Publisher twist_pub_, debug_twist_pub_;
   };
