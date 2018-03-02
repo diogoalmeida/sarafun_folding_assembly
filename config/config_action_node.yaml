@@ -44,7 +44,7 @@ ects_controller:
 
 grasp:
   translational_axis: z
-  rotational_axis: y
+  rotational_axis: -x
 
 adaptive_estimator:
   alpha_force: 0 #0.0030 # 0.01
