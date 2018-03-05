@@ -148,12 +148,28 @@ namespace folding_assembly_controller
     wrench_transform.setRotation(q);
     br.sendTransform(tf::StampedTransform(wrench_transform, ros::Time::now(), base_frame_, "p2_rotated"));
 
+    feedback_.wrench_compensated_1.header.frame_id = base_frame_;
+    feedback_.wrench_compensated_1.header.stamp = ros::Time::now();
+    feedback_.wrench_compensated_2.header.frame_id = base_frame_;
+    feedback_.wrench_compensated_2.header.stamp = ros::Time::now();
+
+    tf::wrenchEigenToMsg(wrench1_rotated, feedback_.wrench_compensated_1.wrench);
+    tf::wrenchEigenToMsg(wrench2_rotated, feedback_.wrench_compensated_2.wrench);
+
     Eigen::Matrix<double, 12, 1> wrenches;
     wrenches.block<6,1>(0, 0) << wrench1_rotated;
     wrenches.block<6,1>(6,0) << wrench2_rotated;
 
     pc_est.linear() = p1_eig.linear();
     pc_est.translation() = kalman_filter_.estimate(p1_eig.translation(), v1_eig, p2_eig.translation(), wrenches, dt.toSec()); // The kalman filter estimates in the base frame, thus the wrench should be writen in that basis.
+
+    feedback_.contact_point_ground.header.frame_id = base_frame_;
+    feedback_.contact_point_ground.header.stamp = ros::Time::now();
+    feedback_.contact_point_estimated.header.frame_id = base_frame_;
+    feedback_.contact_point_estimated.header.stamp = ros::Time::now();
+
+    tf::pointEigenToMsg(pc_est.translation(), feedback_.contact_point_estimated.point);
+    tf::pointEigenToMsg(p1_eig.translation() + contact_offset_*p1_eig.matrix().block<3,1>(0, 2), feedback_.contact_point_estimated.point);
     // TEMP
     // pc_est.translation() = p1_eig.translation() + contact_offset_*p1_eig.matrix().block<3,1>(0, 2);
     // end TEMP

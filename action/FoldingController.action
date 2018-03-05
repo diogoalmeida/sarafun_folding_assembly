@@ -8,3 +8,7 @@ folding_assembly_controller/VelocityGoal velocity_goal
 ---
 # Feedback
 string phase
+geometry_msgs/WrenchStamped wrench_compensated_1
+geometry_msgs/WrenchStamped wrench_compensated_2
+geometry_msgs/PointStamped contact_point_ground
+geometry_msgs/PointStamped contact_point_estimated
