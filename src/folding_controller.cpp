@@ -167,9 +167,14 @@ namespace folding_assembly_controller
     feedback_.contact_point_ground.header.stamp = ros::Time::now();
     feedback_.contact_point_estimated.header.frame_id = base_frame_;
     feedback_.contact_point_estimated.header.stamp = ros::Time::now();
+    feedback_.p1.header.frame_id = base_frame_;
+    feedback_.p1.header.stamp = ros::Time::now();
+    feedback_.p2.header = feedback_.p1.header;
 
     tf::pointEigenToMsg(pc_est.translation(), feedback_.contact_point_estimated.point);
-    tf::pointEigenToMsg(p1_eig.translation() + contact_offset_*p1_eig.matrix().block<3,1>(0, 2), feedback_.contact_point_estimated.point);
+    tf::pointEigenToMsg(p1_eig.translation() + contact_offset_*p1_eig.matrix().block<3,1>(0, 2), feedback_.contact_point_ground.point);
+    tf::pointEigenToMsg(p1_eig.translation(), feedback_.p1.point);
+    tf::pointEigenToMsg(p2_eig.translation(), feedback_.p2.point);
     // TEMP
     // pc_est.translation() = p1_eig.translation() + contact_offset_*p1_eig.matrix().block<3,1>(0, 2);
     // end TEMP
@@ -190,6 +195,16 @@ namespace folding_assembly_controller
     tf::vectorKDLToEigen(t_est_kdl, t_est);
     tf::vectorKDLToEigen(k_est_kdl, k_est);
     n_est = t_est.cross(k_est);
+
+    feedback_.t.header.frame_id = base_frame_;
+    feedback_.t.header.stamp = ros::Time::now();
+    feedback_.k.header = feedback_.t.header;
+    feedback_.n.header = feedback_.t.header;
+
+    tf::vectorEigenToMsg(t_est, feedback_.t.vector);
+    tf::vectorEigenToMsg(k_est, feedback_.k.vector);
+    tf::vectorEigenToMsg(n_est, feedback_.n.vector);
+
     marker_manager_.setMarkerPoints("estimates", "translational_estimate", pc_est.translation(), pc_est.translation() + 0.1*t_est);
     marker_manager_.setMarkerPoints("estimates", "rotational_estimate", pc_est.translation(), pc_est.translation() + 0.1*k_est);
     r1 = pc_est.translation() - p1_eig.translation();

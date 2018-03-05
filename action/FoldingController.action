@@ -12,3 +12,8 @@ geometry_msgs/WrenchStamped wrench_compensated_1
 geometry_msgs/WrenchStamped wrench_compensated_2
 geometry_msgs/PointStamped contact_point_ground
 geometry_msgs/PointStamped contact_point_estimated
+geometry_msgs/PointStamped p1
+geometry_msgs/PointStamped p2
+geometry_msgs/Vector3Stamped t
+geometry_msgs/Vector3Stamped k
+geometry_msgs/Vector3Stamped n
