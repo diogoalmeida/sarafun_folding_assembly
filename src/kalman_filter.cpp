@@ -98,6 +98,13 @@ namespace folding_algorithms{
     K = P_hat.selfadjointView<Eigen::Upper>()*C.transpose()*S.llt().solve(Eigen::MatrixXd::Identity(wrench.rows()/2, wrench.rows()/2));
     x_ = x_ + K*innov;
     P_= (I - K*C)*P_hat.selfadjointView<Eigen::Upper>();
+    Eigen::EigenSolver<Eigen::MatrixXd> es(P_, false);
+
+    if (es.eigenvalues().norm() < 0.01)
+    {
+      ROS_WARN("KF reset!");
+      P_ = Eigen::MatrixXd::Identity(x_.rows(), x_.rows());
+    }
 
     return x_;
   }

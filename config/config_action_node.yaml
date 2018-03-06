@@ -1,5 +1,5 @@
 kinematic_chain_base_link: yumi_base_link
-contact_point_offset: 0.05
+contact_point_offset: 0.0875
 action_name: folding_controller
 
 kdl_manager:
@@ -22,9 +22,9 @@ surface_arm:
 
 kf_estimator:
   Q:
-    data: [10.01, 0, 0, 0, 0, 0,
-           0, 10.01, 0, 0, 0, 0,
-           0, 0, 10.01, 0, 0, 0,
+    data: [50.01, 0, 0, 0, 0, 0,
+           0, 50.01, 0, 0, 0, 0,
+           0, 0, 50.01, 0, 0, 0,
            0, 0, 0, 10.01, 0, 0,
            0, 0, 0, 0, 10.01, 0,
            0, 0, 0, 0, 0, 10.01]
@@ -47,13 +47,13 @@ grasp:
   rotational_axis: -x
 
 adaptive_estimator:
-  alpha_force: 0 #0.0030 # 0.01
-  beta_force: 0 #0.003
+  alpha_force: -0.01 # 0.01
+  beta_force: -0.01
   force_slack: 0.5
-  alpha_adapt_t: 1
-  alpha_torque: 0 #0.3
-  beta_torque: 0 #0.03
-  alpha_adapt_r: 1
+  alpha_adapt_t: 0
+  alpha_torque: -0.3
+  beta_torque: -0.01
+  alpha_adapt_r: 0
   torque_slack: 0.05
   max_force: 5
   max_torque: 0.2

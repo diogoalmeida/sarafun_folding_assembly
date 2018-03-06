@@ -152,6 +152,8 @@ namespace folding_assembly_controller
     feedback_.wrench_compensated_1.header.stamp = ros::Time::now();
     feedback_.wrench_compensated_2.header.frame_id = base_frame_;
     feedback_.wrench_compensated_2.header.stamp = ros::Time::now();
+    feedback_.wrench_total.header.frame_id = base_frame_;
+    feedback_.wrench_total.header.stamp = ros::Time::now();
 
     tf::wrenchEigenToMsg(wrench1_rotated, feedback_.wrench_compensated_1.wrench);
     tf::wrenchEigenToMsg(wrench2_rotated, feedback_.wrench_compensated_2.wrench);
@@ -248,6 +250,8 @@ namespace folding_assembly_controller
     tf::wrenchKDLToEigen(wrench_kdl, wrench1_rotated);
     wrench_total.block<3,1>(0, 0) = (wrench1_rotated.block<3,1>(0, 0) - wrench2.block<3,1>(0, 0))/2;
     wrench_total.block<3,1>(3, 0) = (wrench1_rotated.block<3,1>(3, 0) - r1.cross(wrench1_rotated.block<3,1>(0, 0)) - wrench2.block<3,1>(3, 0) + r2.cross(wrench2.block<3,1>(0, 0)))/2;
+    tf::wrenchEigenToMsg(wrench_total, feedback_.wrench_total.wrench);
+    feedback_.force_norm = wrench_total.block<3,1>(0,0).norm();
     relative_twist = adaptive_velocity_controller_.control(wrench_total, vd, wd, dt.toSec(), r1_in_c_frame.normalized()); // twist expressed at the contact point, in p2 coordinates
 
     tf::twistEigenToKDL(relative_twist, relative_twist_kdl);
@@ -376,7 +380,7 @@ namespace folding_assembly_controller
     Eigen::Affine3d p1_eig;
     kdl_manager_->getGrippingPoint(rod_eef_, lastState(sensor_msgs::JointState()), p1);
     tf::transformKDLToEigen(p1, p1_eig);
-    kalman_filter_.initialize(p1_eig.translation() + contact_offset_*p1_eig.matrix().block<3,1>(0, 2));
+    kalman_filter_.initialize(p1_eig.translation());
 
     return true;
   }
