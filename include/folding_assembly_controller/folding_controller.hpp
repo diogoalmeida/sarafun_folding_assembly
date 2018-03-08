@@ -48,9 +48,10 @@ namespace folding_assembly_controller
 
       @param arm_name The arm name in the parameter server.
       @param eef_name Arm's kinematic chain end-effector name.
+      @param sensor_frame Arm's sensor frame name.
       @return False if something goes wrong, true otherwise.
     **/
-    bool setArm(const std::string &arm_name, std::string &eef_name);
+    bool setArm(const std::string &arm_name, std::string &eef_name, std::string &sensor_frame);
 
     /**
       Allows dynamic reconfiguration of relevant parameters of the controlller.
@@ -71,7 +72,7 @@ namespace folding_assembly_controller
     void publishTwist(const KDL::Twist &twist, const std::string &frame_id, ros::Publisher &pub);
 
     ros::NodeHandle nh_;
-    std::string rod_eef_, surface_eef_, base_frame_, rot_axis_, trans_axis_;
+    std::string rod_eef_, surface_eef_, base_frame_, rot_axis_, trans_axis_, rod_sensor_frame_, surface_sensor_frame_;
     folding_algorithms::KalmanEstimator kalman_filter_;
     folding_algorithms::FoldingPoseController pose_controller_;
     folding_algorithms::AdaptiveController adaptive_velocity_controller_;
@@ -83,6 +84,8 @@ namespace folding_assembly_controller
     dynamic_reconfigure::Server<FoldingConfig>::CallbackType dynamic_reconfigure_callback_;
     double pc_goal_, thetac_goal_, vd_, wd_, contact_offset_;
     bool pose_goal_;
+    KDL::Frame rod_sensor_to_gripping_point_, surface_sensor_to_gripping_point_;
+    tf::TransformListener listener_;
     ros::Publisher twist_pub_;
   };
 }

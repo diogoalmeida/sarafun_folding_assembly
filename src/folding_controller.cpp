@@ -53,12 +53,12 @@ namespace folding_assembly_controller
     // Initialize arms and set gripping points.
     kdl_manager_ = std::make_shared<generic_control_toolbox::KDLManager>(base_frame_);
 
-    if (!setArm("rod_arm", rod_eef_))
+    if (!setArm("rod_arm", rod_eef_, rod_sensor_frame_))
     {
       return false;
     }
 
-    if (!setArm("surface_arm", surface_eef_))
+    if (!setArm("surface_arm", surface_eef_, surface_sensor_frame_))
     {
       return false;
     }
@@ -102,13 +102,55 @@ namespace folding_assembly_controller
     dynamic_reconfigure_callback_ = boost::bind(&FoldingController::reconfig, this, _1, _2);
     dynamic_reconfigure_server_->setCallback(dynamic_reconfigure_callback_);
     twist_pub_ = nh_.advertise<geometry_msgs::WrenchStamped>(ros::this_node::getName() + "/adaptive_twist", 1);
+
+    // get rigid transform between sensor frame and arm gripping point
+    geometry_msgs::PoseStamped rod_sensor_to_gripping_point, surface_sensor_to_gripping_point;
+    rod_sensor_to_gripping_point.header.frame_id = rod_sensor_frame_;
+    rod_sensor_to_gripping_point.header.stamp = ros::Time(0);
+    rod_sensor_to_gripping_point.pose.position.x = 0;
+    rod_sensor_to_gripping_point.pose.position.y = 0;
+    rod_sensor_to_gripping_point.pose.position.z = 0;
+    rod_sensor_to_gripping_point.pose.orientation.x = 0;
+    rod_sensor_to_gripping_point.pose.orientation.y = 0;
+    rod_sensor_to_gripping_point.pose.orientation.z = 0;
+    rod_sensor_to_gripping_point.pose.orientation.w = 1;
+    surface_sensor_to_gripping_point = rod_sensor_to_gripping_point;
+    surface_sensor_to_gripping_point.header.frame_id = surface_sensor_frame_;
+
+    // This should be TEMP code
+    int attempts;
+    for (attempts = 0; attempts < 5; attempts++)
+    {
+      try
+      {
+        listener_.transformPose(rod_eef_, rod_sensor_to_gripping_point, rod_sensor_to_gripping_point);
+        listener_.transformPose(surface_eef_, surface_sensor_to_gripping_point, surface_sensor_to_gripping_point);
+        break;
+      }
+      catch (tf::TransformException ex)
+      {
+        ROS_WARN("TF exception in wrench manager: %s", ex.what());
+      }
+
+      ros::Duration(0.1).sleep();
+    }
+
+    if (attempts >= 5)
+    {
+      ROS_ERROR("Folding controller could not find the transform between the sensor frames and gripping points");
+      return false;
+    }
+
+    tf::poseMsgToKDL(rod_sensor_to_gripping_point.pose, rod_sensor_to_gripping_point_);
+    tf::poseMsgToKDL(surface_sensor_to_gripping_point.pose, surface_sensor_to_gripping_point_);
+
     return true;
   }
 
   sensor_msgs::JointState FoldingController::controlAlgorithm(const sensor_msgs::JointState &current_state, const ros::Duration &dt)
   {
     sensor_msgs::JointState ret = current_state;
-    KDL::Frame p1, p2;
+    KDL::Frame p1, p2, p_sensor1, p_sensor2;
     Eigen::Affine3d p1_eig, p2_eig, pc_est;
 
     kdl_manager_->getGrippingPoint(rod_eef_, current_state, p1);
@@ -121,17 +163,25 @@ namespace folding_assembly_controller
     static tf::TransformBroadcaster br;
     tf::Transform wrench_transform;
 
-    Eigen::Matrix<double, 6, 1> v1_eig, wrench1, wrench2, wrench_total, wrench1_rotated, wrench2_rotated;
+    Eigen::Matrix<double, 6, 1> v1_eig, wrench1, wrench2, wrench_total, wrench1_rotated, wrench2_rotated, wrench1_orig, wrench2_orig;
 
     kdl_manager_->getGrippingTwist(rod_eef_, current_state, v1);
     if (!wrench_manager_.wrenchAtGrippingPoint(rod_eef_, wrench1))
     {
       wrench1 = Eigen::Matrix<double, 6, 1>::Zero();
     }
+    else
+    {
+      wrench_manager_.wrenchAtSensorPoint(rod_eef_, wrench1_orig);
+    }
 
     if (!wrench_manager_.wrenchAtGrippingPoint(surface_eef_, wrench2))
     {
       wrench2 = Eigen::Matrix<double, 6, 1>::Zero();
+    }
+    else
+    {
+      wrench_manager_.wrenchAtSensorPoint(surface_eef_, wrench2_orig);
     }
 
     // Change wrench frames
@@ -148,15 +198,24 @@ namespace folding_assembly_controller
     wrench_transform.setRotation(q);
     br.sendTransform(tf::StampedTransform(wrench_transform, ros::Time::now(), base_frame_, "p2_rotated"));
 
+    p_sensor1 = p1.Inverse()*rod_sensor_to_gripping_point_;
+    p_sensor2 = p2.Inverse()*surface_sensor_to_gripping_point_;
+
     feedback_.wrench_compensated_1.header.frame_id = base_frame_;
     feedback_.wrench_compensated_1.header.stamp = ros::Time::now();
     feedback_.wrench_compensated_2.header.frame_id = base_frame_;
     feedback_.wrench_compensated_2.header.stamp = ros::Time::now();
+    feedback_.wrench_sensor_1.header.frame_id = rod_sensor_frame_;
+    feedback_.wrench_sensor_1.header.stamp = ros::Time::now();
+    feedback_.wrench_sensor_2.header.frame_id = surface_sensor_frame_;
+    feedback_.wrench_sensor_2.header.stamp = ros::Time::now();
     feedback_.wrench_total.header.frame_id = base_frame_;
     feedback_.wrench_total.header.stamp = ros::Time::now();
 
     tf::wrenchEigenToMsg(wrench1_rotated, feedback_.wrench_compensated_1.wrench);
     tf::wrenchEigenToMsg(wrench2_rotated, feedback_.wrench_compensated_2.wrench);
+    tf::wrenchEigenToMsg(wrench1_orig, feedback_.wrench_sensor_1.wrench);
+    tf::wrenchEigenToMsg(wrench2_orig, feedback_.wrench_sensor_2.wrench);
 
     Eigen::Matrix<double, 12, 1> wrenches;
     wrenches.block<6,1>(0, 0) << wrench1_rotated;
@@ -172,11 +231,18 @@ namespace folding_assembly_controller
     feedback_.p1.header.frame_id = base_frame_;
     feedback_.p1.header.stamp = ros::Time::now();
     feedback_.p2.header = feedback_.p1.header;
+    feedback_.sensor1.header.frame_id = base_frame_;
+    feedback_.sensor1.header.stamp = ros::Time::now();
+    feedback_.sensor2.header.frame_id = base_frame_;
+    feedback_.sensor2.header.stamp = ros::Time::now();
 
     tf::pointEigenToMsg(pc_est.translation(), feedback_.contact_point_estimated.point);
     tf::pointEigenToMsg(p1_eig.translation() + contact_offset_*p1_eig.matrix().block<3,1>(0, 2), feedback_.contact_point_ground.point);
-    tf::pointEigenToMsg(p1_eig.translation(), feedback_.p1.point);
-    tf::pointEigenToMsg(p2_eig.translation(), feedback_.p2.point);
+    tf::poseEigenToMsg(p1_eig, feedback_.p1.pose);
+    tf::poseEigenToMsg(p2_eig, feedback_.p2.pose);
+    tf::poseKDLToMsg(p_sensor1, feedback_.sensor1.pose);
+    tf::poseKDLToMsg(p_sensor2, feedback_.sensor2.pose);
+
     // TEMP
     // pc_est.translation() = p1_eig.translation() + contact_offset_*p1_eig.matrix().block<3,1>(0, 2);
     // end TEMP
@@ -270,7 +336,7 @@ namespace folding_assembly_controller
     return ret;
   }
 
-  bool FoldingController::setArm(const std::string &arm_name, std::string &eef_name)
+  bool FoldingController::setArm(const std::string &arm_name, std::string &eef_name, std::string &sensor_frame)
   {
       generic_control_toolbox::ArmInfo info;
 
@@ -280,6 +346,7 @@ namespace folding_assembly_controller
       }
 
       eef_name = info.kdl_eef_frame;
+      sensor_frame = info.sensor_frame;
 
       if(!generic_control_toolbox::setKDLManager(info, kdl_manager_))
       {
