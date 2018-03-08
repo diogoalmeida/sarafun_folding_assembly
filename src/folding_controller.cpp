@@ -150,7 +150,7 @@ namespace folding_assembly_controller
   sensor_msgs::JointState FoldingController::controlAlgorithm(const sensor_msgs::JointState &current_state, const ros::Duration &dt)
   {
     sensor_msgs::JointState ret = current_state;
-    KDL::Frame p1, p2, p_sensor1, p_sensor2;
+    KDL::Frame p1, p2, p_sensor1, p_sensor2, eef1, eef2;
     Eigen::Affine3d p1_eig, p2_eig, pc_est;
 
     kdl_manager_->getGrippingPoint(rod_eef_, current_state, p1);
@@ -198,8 +198,10 @@ namespace folding_assembly_controller
     wrench_transform.setRotation(q);
     br.sendTransform(tf::StampedTransform(wrench_transform, ros::Time::now(), base_frame_, "p2_rotated"));
 
-    p_sensor1 = p1.Inverse()*rod_sensor_to_gripping_point_;
-    p_sensor2 = p2.Inverse()*surface_sensor_to_gripping_point_;
+    kdl_manager_->getEefPose(rod_eef_, current_state, eef1);
+    kdl_manager_->getEefPose(surface_eef_, current_state, eef2);
+    p_sensor1 = eef1*rod_sensor_to_gripping_point_;
+    p_sensor2 = eef2*surface_sensor_to_gripping_point_;
 
     feedback_.wrench_compensated_1.header.frame_id = base_frame_;
     feedback_.wrench_compensated_1.header.stamp = ros::Time::now();
