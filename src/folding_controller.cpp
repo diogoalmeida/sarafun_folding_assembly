@@ -69,6 +69,16 @@ namespace folding_assembly_controller
       return false;
     }
 
+    if (!nh_.getParam("use_computed_torque", use_computed_torque_))
+    {
+      use_computed_torque_ = false;
+    }
+
+    if (!nh_.getParam("use_ground_truth_pc", use_ground_truth_pc_))
+    {
+      use_ground_truth_pc_ = false;
+    }
+
     try
     {
       ects_controller_.reset(new folding_algorithms::ECTSController(rod_eef_, surface_eef_, kdl_manager_));
@@ -203,6 +213,13 @@ namespace folding_assembly_controller
     p_sensor1 = eef1*rod_sensor_to_gripping_point_;
     p_sensor2 = eef2*surface_sensor_to_gripping_point_;
 
+    if (use_computed_torque_)
+    {
+      Eigen::Vector3d pc_temp = p1_eig.translation() + contact_offset_*p1_eig.matrix().block<3,1>(0, 2);
+      wrench1_rotated.block<3, 1>(3,0) = (pc_temp - p1_eig.translation()).cross(wrench1_rotated.block<3, 1>(0,0));
+      wrench2_rotated.block<3, 1>(3,0) = (pc_temp - p2_eig.translation()).cross(wrench2_rotated.block<3, 1>(0,0));
+    }
+
     feedback_.wrench_compensated_1.header.frame_id = base_frame_;
     feedback_.wrench_compensated_1.header.stamp = ros::Time::now();
     feedback_.wrench_compensated_2.header.frame_id = base_frame_;
@@ -245,9 +262,11 @@ namespace folding_assembly_controller
     tf::poseKDLToMsg(p_sensor1, feedback_.sensor1.pose);
     tf::poseKDLToMsg(p_sensor2, feedback_.sensor2.pose);
 
-    // TEMP
-    // pc_est.translation() = p1_eig.translation() + contact_offset_*p1_eig.matrix().block<3,1>(0, 2);
-    // end TEMP
+    if (use_ground_truth_pc_)
+    {
+      pc_est.translation() = p1_eig.translation() + contact_offset_*p1_eig.matrix().block<3,1>(0, 2);
+    }
+
     marker_manager_.setMarkerPose("estimates", "contact_point_estimate", pc_est);
 
     Eigen::Vector3d t_est, k_est, n_est, r1, r2, r1_in_c_frame;
