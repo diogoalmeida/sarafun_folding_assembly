@@ -1,16 +1,18 @@
 kinematic_chain_base_link: yumi_base_link
-contact_point_offset: 0.0875
+contact_point_offset: 0.085
 action_name: folding_controller
+use_computed_torque: false
+use_ground_truth_pc: false
 
 kdl_manager:
-  eps: 0.001
+  eps: 0.005
   max_tf_attempts: 10
   ikvel_solver: nso
-  nso_weight: 4
+  nso_weight: 40
 
 rod_arm:
   kdl_eef_frame: "yumi_link_7_l"
-  gripping_frame: "l_gripping_point" #"gripper_l_finger_l"
+  gripping_frame: "l_gripping_point" #"l_gripping_point" #"gripper_l_finger_l"
   has_ft_sensor: true
   sensor_frame: "optodaq_l_sensor_link"
   sensor_topic: "/yumi/optodaq_l_compensated"
@@ -18,9 +20,15 @@ rod_arm:
     data: [1.0, 0, 0, 0, 0, 0,
            0, 1.0, 0, 0, 0, 0,
            0, 0, 1.0, 0, 0, 0,
-           0, 0, 0, 1.0, 0, 0,
-           0, 0, 0, 0, 1.0, 0,
-           0, 0, 0, 0, 0, 1.0]
+           -0.003755, 0.1312, -0.2086, 0.9567, 0.1303, -0.4629,
+           -0.1484, 0.003747, -0.2033, -0.01629, 0.8290, -0.7302,
+           0.2421, 0.2201, -0.001971, -0.1491, 0.1518, 2.341]
+    # data: [1.0, 0, 0, 0, 0, 0,
+    #        0, 1.0, 0, 0, 0, 0,
+    #        0, 0, 1.0, 0, 0, 0,
+    #        0.05975, 0.2789, -0.008671, 0.5075, 0.4840, -0.5221,
+    #        -0.07749, -0.2948, -0.05920, 1.859, 1.966, -0.7643,
+    #        0.04118, -0.001649, -0.002709, 0.2350, 0.2619, -0.04483]
 
 surface_arm:
   kdl_eef_frame: "yumi_link_7_r"
@@ -32,18 +40,24 @@ surface_arm:
     data: [1.0, 0, 0, 0, 0, 0,
            0, 1.0, 0, 0, 0, 0,
            0, 0, 1.0, 0, 0, 0,
-           0, 0, 0, 1.0, 0, 0,
-           0, 0, 0, 0, 1.0, 0,
-           0, 0, 0, 0, 0, 1.0]
+           0.0231, 0.2995, 0.1786, 0.2503, 0.1335, -1.137,
+           -0.1782, 0.09679, -0.2199, -0.4266, 0.6602, -1.004,
+           -0.2149, 0.2782, 0.003294, -0.2983, -0.1895, 1.271]
+    # data: [1.0, 0, 0, 0, 0, 0,
+    #        0, 1.0, 0, 0, 0, 0,
+    #        0, 0, 1.0, 0, 0, 0,
+    #        0.0992, 0.2148, -0.03932, 0.371, 0.4616, -0.9249,
+    #        -0.08834, -0.1070, -0.2797, 0.4335, 0.9466, -1.516,
+    #        -0.003491, 0.05097, 0, -0.09557, -0.2023, 0.3558]
 
 kf_estimator:
   Q:
-    data: [50.01, 0, 0, 0, 0, 0,
-           0, 50.01, 0, 0, 0, 0,
-           0, 0, 50.01, 0, 0, 0,
-           0, 0, 0, 10.01, 0, 0,
-           0, 0, 0, 0, 10.01, 0,
-           0, 0, 0, 0, 0, 10.01]
+    data: [5.01, 0, 0, 0, 0, 0,
+           0, 5.01, 0, 0, 0, 0,
+           0, 0, 5.01, 0, 0, 0,
+           0, 0, 0, 1.01, 0, 0,
+           0, 0, 0, 0, 1.01, 0,
+           0, 0, 0, 0, 0, 1.01]
   R:
     data: [0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01]
 
@@ -60,14 +74,14 @@ ects_controller:
 
 grasp:
   translational_axis: z
-  rotational_axis: -x
+  rotational_axis: -x #y
 
 adaptive_estimator:
-  alpha_force: -0.01 # 0.01
+  alpha_force: -0.00 # 0.01
   beta_force: -0.0
   force_slack: 0.5
   alpha_adapt_t: 0
-  alpha_torque: 0.3
+  alpha_torque: 0.0
   beta_torque: -0.0
   alpha_adapt_r: 0
   torque_slack: 0.05

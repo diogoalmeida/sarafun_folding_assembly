@@ -32,5 +32,5 @@
 
   <node pkg="tf" type="static_transform_publisher" name="r_grip_broadcaster" args="0 0.0 0.156 0 0 0 1 gripper_r_base r_gripping_point 50" />
   <node pkg="tf" type="static_transform_publisher" name="l_grip_broadcaster" args="0 0.0 0.156 0 0 0 1 gripper_l_base l_gripping_point 50" />
-  <node pkg="tf" type="static_transform_publisher" name="pc_ground_broadcaster" args="0 0.0 0.0875 0 0 0 1 l_gripping_point pc_ground 50" />
+  <node pkg="tf" type="static_transform_publisher" name="pc_ground_broadcaster" args="0 0.0 0.085 0 0 0 1 l_gripping_point pc_ground 50" />
 </launch>
