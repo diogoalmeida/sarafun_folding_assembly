@@ -69,15 +69,15 @@ namespace folding_assembly_controller
       @param pub A publisher for WrenchStamped messages.
     **/
     void publishTwist(const KDL::Twist &twist, const std::string &frame_id, ros::Publisher &pub);
-    
+
     /**
       Checks if the axis string is valid.
-      
+
       @param axis the axis string.
       @return False is axis is not valid, true otherwise.
     **/
     bool checkAxis(const std::string &axis) const;
-    
+
     /**
       Return the axis vector given by the axis parameter.
     **/
@@ -95,7 +95,7 @@ namespace folding_assembly_controller
     std::shared_ptr<dynamic_reconfigure::Server<FoldingConfig> > dynamic_reconfigure_server_;
     dynamic_reconfigure::Server<FoldingConfig>::CallbackType dynamic_reconfigure_callback_;
     double pc_goal_, thetac_goal_, vd_, wd_, contact_offset_, prev_theta_proj_, theta_lim_, max_contact_force_, angle_goal_threshold_, wait_time_;
-    bool pose_goal_, block_rotation_, final_rotation_;
+    bool pose_goal_, block_rotation_, final_rotation_, skip_final_alignment_;
     ros::Publisher twist_pub_, debug_twist_pub_;
     ros::Time start_time_;
   };

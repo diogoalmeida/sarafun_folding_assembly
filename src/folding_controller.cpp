@@ -23,10 +23,10 @@ namespace folding_assembly_controller
     {
       return false;
     }
-    
+
     return true;
   }
-  
+
   bool FoldingController::init()
   {
     std::string rod_gripping_frame, surface_gripping_frame;
@@ -47,25 +47,25 @@ namespace folding_assembly_controller
       ROS_WARN("Missing grasp/translational_axis parameter, using default");
       trans_axis_ = "x";
     }
-    
+
     if (!nh_.getParam("rod_arm/align_axis", p1_align_))
     {
       ROS_ERROR("Missing rod arm align axis");
       return false;
     }
-    
+
     if (!nh_.getParam("surface_arm/align_axis", p2_align_))
     {
       ROS_ERROR("Missing surface arm align axis");
       return false;
     }
-    
+
     if (!nh_.getParam("base_align", base_align_))
 	{
 	  ROS_ERROR("Missing base align axis");
 	  return false;
 	}
-    
+
     if (!nh_.getParam("initial_wait_time", wait_time_))
     {
       ROS_WARN("Missing initial_wait_time, using default");
@@ -144,39 +144,39 @@ namespace folding_assembly_controller
     debug_twist_pub_ = nh_.advertise<geometry_msgs::WrenchStamped>(ros::this_node::getName() + "/gripping_point_twist", 1);
     return true;
   }
-  
+
   KDL::Vector FoldingController::getAxis(const KDL::Frame &pose, const std::string &axis) const
   {
     if (axis == "x")
     {
       return pose.M.UnitX();
     }
-    
+
     if (axis == "-x")
     {
       return -pose.M.UnitX();
     }
-    
+
     if (axis =="y")
     {
       return pose.M.UnitY();
     }
-    
+
     if (axis == "-y")
     {
       return -pose.M.UnitY();
     }
-    
+
     if (axis == "z")
     {
       return pose.M.UnitZ();
     }
-    
+
     if (axis == "-z")
     {
       return -pose.M.UnitZ();
     }
-    
+
     ROS_ERROR("Got invalid axis name, returning default");
     return pose.M.UnitX();
   }
@@ -210,7 +210,7 @@ namespace folding_assembly_controller
     q.setRPY(0, 0, 0);
     wrench_transform.setRotation(q);
     br.sendTransform(tf::StampedTransform(wrench_transform, ros::Time::now(), base_frame_, "p2_rotated"));
-    
+
     if ((ros::Time::now() - start_time_).toSec() > wait_time_)
     {
       compute_control = true;
@@ -254,11 +254,11 @@ namespace folding_assembly_controller
 
     double pc_proj, theta_proj;
     Eigen::Vector3d r2_y, pose_target_dir, target_point, r2_plane, r1_plane;
-    
+
     KDL::Vector align1, align2;
     Eigen::Vector3d align1_eig, align2_eig;
     double sign = 0.0;
-    
+
     align1 = getAxis(p1, p1_align_);
 // 	ROS_INFO_STREAM("P1 align axis: " << align1.x() << ", " << align1.y() << ", " << align1.z());
     align2 = getAxis(p2, p2_align_);
@@ -269,7 +269,7 @@ namespace folding_assembly_controller
     align2_eig = (Eigen::Matrix3d::Identity() - k_est*k_est.transpose())*align2_eig;
 	align2_eig = align2_eig.normalized();
 	sign = align1_eig.cross(align2_eig).dot(k_est);
-	
+
     if (compute_control && !final_rotation_)
     {
       if (pose_goal_)
@@ -290,7 +290,7 @@ namespace folding_assembly_controller
         vd = vd_;
         wd = wd_;
         feedback_.phase = "Velocity control";
-      }  
+      }
     }
 
     KDL::Twist relative_twist_kdl;
@@ -322,32 +322,39 @@ namespace folding_assembly_controller
     // need to use virtual sticks up to the end-effector location, not the grasping point. TODO: Fix this
     if (pose_goal_ && final_rotation_) // time to finish the action
     {
-      Eigen::Matrix<double, 6, 1> absolute_twist;
-      double pc_proj, theta_proj;
-      KDL::Frame base;
-      KDL::Vector align_base;
-      Eigen::Vector3d p2_z, base_x, base_y, base_z, align_base_eig;
-      base_x << 1, 0, 0;
-      base_y << 0, 1, 0;
-      base_z << 0, 0, 1;
-      
-      align_base = getAxis(base, base_align_);
-      tf::vectorKDLToEigen(align_base, align_base_eig);
-      align_base_eig = (Eigen::Matrix3d::Identity() - k_est*k_est.transpose())*align_base_eig;
-	  align_base_eig = align_base_eig.normalized();
-	  sign = align_base_eig.cross(align2_eig).dot(k_est);
-      theta_proj = sign/fabs(sign)*acos(align2_eig.dot(align_base_eig)); // want vector from contact to end-effector
-      ROS_DEBUG_STREAM("Theta proj: " << theta_proj);
-      feedback_.phase = "Final alignment";
-      feedback_.current_angle = theta_proj;
-      if (fabs(theta_proj) < angle_goal_threshold_)
+      if (skip_final_alignment_)
       {
         action_server_->setSucceeded();
       }
-      absolute_pose_controller_.computeControl(pc_proj, theta_proj, 0.0, 0.0, vd, wd);
-      absolute_twist.block<3,1>(0, 0) = vd*base_y;
-      absolute_twist.block<3,1>(3, 0) = wd*base_x;
-      qdot = ects_controller_->control(current_state, pc_est.translation() - eef1_eig.translation(), pc_est.translation() - eef2_eig.translation(), absolute_twist, Eigen::Matrix<double, 6, 1>::Zero());
+      else
+      {
+        Eigen::Matrix<double, 6, 1> absolute_twist;
+        double pc_proj, theta_proj;
+        KDL::Frame base;
+        KDL::Vector align_base;
+        Eigen::Vector3d p2_z, base_x, base_y, base_z, align_base_eig;
+        base_x << 1, 0, 0;
+        base_y << 0, 1, 0;
+        base_z << 0, 0, 1;
+
+        align_base = getAxis(base, base_align_);
+        tf::vectorKDLToEigen(align_base, align_base_eig);
+        align_base_eig = (Eigen::Matrix3d::Identity() - k_est*k_est.transpose())*align_base_eig;
+        align_base_eig = align_base_eig.normalized();
+        sign = align_base_eig.cross(align2_eig).dot(k_est);
+        theta_proj = sign/fabs(sign)*acos(align2_eig.dot(align_base_eig)); // want vector from contact to end-effector
+        ROS_DEBUG_STREAM("Theta proj: " << theta_proj);
+        feedback_.phase = "Final alignment";
+        feedback_.current_angle = theta_proj;
+        if (fabs(theta_proj) < angle_goal_threshold_)
+        {
+          action_server_->setSucceeded();
+        }
+        absolute_pose_controller_.computeControl(pc_proj, theta_proj, 0.0, 0.0, vd, wd);
+        absolute_twist.block<3,1>(0, 0) = vd*base_y;
+        absolute_twist.block<3,1>(3, 0) = wd*base_x;
+        qdot = ects_controller_->control(current_state, pc_est.translation() - eef1_eig.translation(), pc_est.translation() - eef2_eig.translation(), absolute_twist, Eigen::Matrix<double, 6, 1>::Zero());
+      }
     }
     else
     {
@@ -473,6 +480,7 @@ namespace folding_assembly_controller
 
     theta_lim_ = goal->theta_lim;
     max_contact_force_ = goal->max_contact_force;
+    skip_final_alignment_ = goal->skip_final_alignment;
 
     KDL::Frame p1;
     Eigen::Affine3d p1_eig;
