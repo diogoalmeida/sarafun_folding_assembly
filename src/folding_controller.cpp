@@ -38,6 +38,12 @@ namespace folding_assembly_controller
       trans_axis_ = "x";
     }
 
+    if (!nh_.getParam("use_two_sensors", use_both_sensors_))
+    {
+      ROS_ERROR("Missing use_two_sensors");
+      return false;
+    }
+
     if (rot_axis_ != "x" && rot_axis_ != "y" && rot_axis_ != "z" && rot_axis_ != "-x" && rot_axis_ != "-y" && rot_axis_ != "-z")
     {
       ROS_ERROR_STREAM("Invalid rotational axis parameter: " << rot_axis_);
@@ -236,9 +242,18 @@ namespace folding_assembly_controller
     tf::wrenchEigenToMsg(wrench1_orig, feedback_.wrench_sensor_1.wrench);
     tf::wrenchEigenToMsg(wrench2_orig, feedback_.wrench_sensor_2.wrench);
 
-    Eigen::Matrix<double, 12, 1> wrenches;
-    wrenches.block<6,1>(0, 0) << wrench1_rotated;
-    wrenches.block<6,1>(6,0) << wrench2_rotated;
+    Eigen::MatrixXd wrenches;
+    if (use_both_sensors_)
+    {
+      wrenches = Eigen::Matrix<double, 12, 1>();
+      wrenches.block<6,1>(0, 0) << wrench1_rotated;
+      wrenches.block<6,1>(6,0) << wrench2_rotated;
+    }
+    else
+    {
+      wrenches = Eigen::Matrix<double, 6, 1>();
+      wrenches.block<6,1>(0,0) << wrench2_rotated;
+    }
 
     pc_est.linear() = p1_eig.linear();
     pc_est.translation() = kalman_filter_.estimate(p1_eig.translation(), v1_eig, p2_eig.translation(), wrenches, dt.toSec()); // The kalman filter estimates in the base frame, thus the wrench should be writen in that basis.
