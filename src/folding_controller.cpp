@@ -118,6 +118,9 @@ namespace folding_assembly_controller
     dynamic_reconfigure_callback_ = boost::bind(&FoldingController::reconfig, this, _1, _2);
     dynamic_reconfigure_server_->setCallback(dynamic_reconfigure_callback_);
     twist_pub_ = nh_.advertise<geometry_msgs::WrenchStamped>(ros::this_node::getName() + "/adaptive_twist", 1);
+    wrench_total_pub_ = nh_.advertise<geometry_msgs::WrenchStamped>(ros::this_node::getName() + "/compensated_total_wrench", 1);
+    wrench1_comp_pub_ = nh_.advertise<geometry_msgs::WrenchStamped>(ros::this_node::getName() + "/compensated_wrench1", 1);
+    wrench2_comp_pub_ = nh_.advertise<geometry_msgs::WrenchStamped>(ros::this_node::getName() + "/compensated_wrench2", 1);
 
     // get rigid transform between sensor frame and arm gripping point
     geometry_msgs::PoseStamped rod_sensor_to_gripping_point, surface_sensor_to_gripping_point;
@@ -346,15 +349,37 @@ namespace folding_assembly_controller
     r1_kdl = p2.M.Inverse()*r1_kdl;
     tf::vectorKDLToEigen(r1_kdl, r1_in_c_frame);
 
-    // must convert wrench1 to eef2
-    tf::wrenchEigenToKDL(wrench1, wrench_kdl);
-    wrench_kdl = p2.M.Inverse()*p1.M*wrench_kdl;
-    tf::wrenchKDLToEigen(wrench_kdl, wrench1_rotated);
-    wrench_total.block<3,1>(0, 0) = (wrench1_rotated.block<3,1>(0, 0) - wrench2.block<3,1>(0, 0))/2;
-    wrench_total.block<3,1>(3, 0) = (wrench1_rotated.block<3,1>(3, 0) - r1.cross(wrench1_rotated.block<3,1>(0, 0)) - wrench2.block<3,1>(3, 0) + r2.cross(wrench2.block<3,1>(0, 0)))/2;
+    // compensate wrench1
+    Eigen::Matrix<double, 6, 1> wrench1_rotated_compensated = wrench1_rotated, wrench2_rotated_compensated = wrench2_rotated;
+    wrench1_rotated_compensated.block<3,1>(3, 0) = wrench1_rotated_compensated.block<3,1>(3, 0) - r1.cross(wrench1_rotated_compensated.block<3,1>(0,0));
+    wrench2_rotated_compensated.block<3,1>(3, 0) = wrench2_rotated_compensated.block<3,1>(3, 0) - r2.cross(wrench2_rotated_compensated.block<3,1>(0,0));
+    // must convert to eef2
+    tf::wrenchEigenToKDL(wrench1_rotated_compensated, wrench_kdl);
+    wrench_kdl = p2.M.Inverse()*wrench_kdl;
+    tf::wrenchKDLToEigen(wrench_kdl, wrench1_rotated_compensated);
+    tf::wrenchEigenToKDL(wrench2_rotated_compensated, wrench_kdl);
+    wrench_kdl = p2.M.Inverse()*wrench_kdl;
+    tf::wrenchKDLToEigen(wrench_kdl, wrench2_rotated_compensated);
+
+    wrench_total.block<3,1>(0, 0) = (wrench1_rotated_compensated.block<3,1>(0, 0) - wrench2_rotated_compensated.block<3,1>(0, 0))/2;
+    wrench_total.block<3,1>(3, 0) = (wrench1_rotated_compensated.block<3,1>(3, 0) - wrench2_rotated_compensated.block<3,1>(3, 0))/2;
     tf::wrenchEigenToMsg(wrench_total, feedback_.wrench_total.wrench);
     feedback_.force_norm = wrench_total.block<3,1>(0,0).norm();
     relative_twist = adaptive_velocity_controller_.control(wrench_total, vd, wd, dt.toSec(), r1_in_c_frame.normalized()); // twist expressed at the contact point, in p2 coordinates
+
+    geometry_msgs::WrenchStamped compensated_wrench, wrench1_msg, wrench2_msg;
+    compensated_wrench.header.frame_id = surface_eef_;
+    compensated_wrench.header.stamp = ros::Time::now();
+    wrench1_msg = compensated_wrench;
+    wrench2_msg = wrench1_msg;
+    tf::wrenchEigenToMsg(wrench_total, compensated_wrench.wrench);
+    wrench_total_pub_.publish(compensated_wrench);
+
+    wrench1_msg.header.frame_id = rod_eef_;
+    tf::wrenchEigenToMsg(wrench1_rotated_compensated, wrench1_msg.wrench);
+    tf::wrenchEigenToMsg(wrench2_rotated_compensated, wrench2_msg.wrench);
+    wrench1_comp_pub_.publish(wrench1_msg);
+    wrench2_comp_pub_.publish(wrench2_msg);
 
     tf::twistEigenToKDL(relative_twist, relative_twist_kdl);
     relative_twist_kdl = p2.M*relative_twist_kdl;

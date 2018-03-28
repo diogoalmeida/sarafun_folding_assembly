@@ -86,7 +86,7 @@ namespace folding_assembly_controller
     bool pose_goal_, use_computed_torque_, use_ground_truth_pc_, use_both_sensors_;
     KDL::Frame rod_sensor_to_gripping_point_, surface_sensor_to_gripping_point_;
     tf::TransformListener listener_;
-    ros::Publisher twist_pub_;
+    ros::Publisher twist_pub_, wrench_total_pub_, wrench1_comp_pub_, wrench2_comp_pub_;
   };
 }
 #endif

@@ -19,7 +19,7 @@
   </group>
 
   <group unless="$(arg debug)">
-    <node name="joint_mux" pkg="folding_assembly_controller" type="joint_command_mux.py" output="screen" required="true">
+    <node name="joint_mux" pkg="folding_assembly_controller" type="joint_command_mux.py" output="screen" required="false">
       <rosparam command="load" file="$(find folding_assembly_controller)/config/config_mux.yaml"/>
     </node>
     <node name="folding_controller" pkg="folding_assembly_controller" type="folding_action_node" output="screen" required="true">
