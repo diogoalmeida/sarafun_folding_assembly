@@ -52,7 +52,10 @@ namespace folding_algorithms{
     }
     else
     {
-      force_error_ = force_error_ - force_slack_*force_error_.normalized();
+      if (force_error_.norm() > 0)
+      {
+        force_error_ = force_error_ - force_slack_*force_error_.normalized();
+      }
     }
 
     torque_error_ = wrench.block<3,1>(3,0);
@@ -64,7 +67,10 @@ namespace folding_algorithms{
     }
     else
     {
-      torque_error_ = torque_error_ - torque_slack_*torque_error_.normalized();
+      if (torque_error_.norm() > 0)
+      {
+        torque_error_ = torque_error_ - torque_slack_*torque_error_.normalized();
+      }
     }
 
     int_force_ = computeIntegralTerm(int_force_, t_, force_error_, dt);
@@ -92,7 +98,7 @@ namespace folding_algorithms{
       w_f_ = w_f_*max_torque_/w_f_.norm();
     }
 
-    ref_twist.block<3,1>(3,0) = w_d*r_ - w_f_;
+    ref_twist.block<3,1>(3,0) = w_d*r_ - (I - r_*r_.transpose())*w_f_;
     r_ = r_ - alpha_adapt_r_*(w_d + r_.transpose()*w_f_)*(I - r_*r_.transpose())*w_f_*dt;
     r_ = r_/r_.norm();
 
