@@ -294,7 +294,7 @@ namespace folding_assembly_controller
 
         if (fabs(theta_proj) < theta_lim_)
         {
-          final_rotation_ = true;
+          action_server_->setSucceeded();
         }
         feedback_.phase = "Velocity control";
       }
