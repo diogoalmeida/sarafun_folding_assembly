@@ -267,20 +267,22 @@ namespace folding_assembly_controller
     align1_eig = (Eigen::Matrix3d::Identity() - k_est*k_est.transpose())*align1_eig; // project on rotation plane
     align1_eig = align1_eig.normalized();
     align2_eig = (Eigen::Matrix3d::Identity() - k_est*k_est.transpose())*align2_eig;
-	align2_eig = align2_eig.normalized();
-	sign = align1_eig.cross(align2_eig).dot(k_est);
+    align2_eig = align2_eig.normalized();
+    sign = align1_eig.cross(align2_eig).dot(k_est);
+    theta_proj = sign/fabs(sign)*acos(align1_eig.dot(align2_eig));
+    pc_proj = pc_est.translation().dot(align2_eig);
+    prev_theta_proj_ = theta_proj;
+    feedback_.current_angle = theta_proj;
+
 
     if (compute_control && !final_rotation_)
     {
       if (pose_goal_)
       {
         feedback_.phase = "Pose regulation";
-        theta_proj = sign/fabs(sign)*acos(align1_eig.dot(align2_eig));
-		pc_proj = pc_est.translation().dot(align2_eig);
-        prev_theta_proj_ = theta_proj;
-        feedback_.current_angle = theta_proj;
-		relative_pose_controller_.computeControl(pc_proj, theta_proj, pc_goal_, thetac_goal_, vd, wd);
-        if (fabs(theta_proj) < angle_goal_threshold_)
+        relative_pose_controller_.computeControl(pc_proj, theta_proj, pc_goal_, thetac_goal_, vd, wd);
+
+        if (fabs(theta_proj - thetac_goal_) < angle_goal_threshold_)
         {
           final_rotation_ = true;
         }
@@ -289,6 +291,11 @@ namespace folding_assembly_controller
       {
         vd = vd_;
         wd = wd_;
+
+        if (fabs(theta_proj) < theta_lim_)
+        {
+          final_rotation_ = true;
+        }
         feedback_.phase = "Velocity control";
       }
     }
@@ -354,6 +361,7 @@ namespace folding_assembly_controller
         absolute_twist.block<3,1>(0, 0) = vd*base_y;
         absolute_twist.block<3,1>(3, 0) = wd*base_x;
         qdot = ects_controller_->control(current_state, pc_est.translation() - eef1_eig.translation(), pc_est.translation() - eef2_eig.translation(), absolute_twist, Eigen::Matrix<double, 6, 1>::Zero());
+
       }
     }
     else
@@ -465,10 +473,10 @@ namespace folding_assembly_controller
     if (goal->use_pose_goal)
     {
       ROS_INFO("Using pose goal");
+      angle_goal_threshold_ = goal->pose_goal.angle_goal_threshold;
       pose_goal_ = true;
       pc_goal_ = goal->pose_goal.pd;
       thetac_goal_ = goal->pose_goal.thetad;
-      angle_goal_threshold_ = goal->pose_goal.angle_goal_threshold;
     }
     else
     {
