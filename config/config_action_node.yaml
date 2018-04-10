@@ -3,6 +3,7 @@ contact_point_offset: 0.05
 action_name: folding_controller
 initial_wait_time: 0
 base_align: -y
+wiggle_max_time: 2
 
 kdl_manager:
   eps: 0.001

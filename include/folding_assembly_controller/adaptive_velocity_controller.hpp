@@ -76,9 +76,17 @@ typedef Eigen::Matrix<double, 6, 1> Vector6d;
     **/
     void getErrors(Eigen::Vector3d &force_e, Eigen::Vector3d &torque_e, Eigen::Vector3d &desired_force) const;
 
+    /**
+      Enable wiggle for final fitting.
+
+      @param val Truth val for using wiggle.
+    **/
+    void useWiggle(bool val);
+
   private:
     double alpha_force_, beta_force_, alpha_torque_t_, alpha_torque_n_, beta_torque_t_, beta_torque_n_;
     double f_d_, alpha_adapt_t_, alpha_adapt_r_, torque_slack_, max_force_, max_torque_, force_slack_, wiggle_amplitude_, wiggle_frequency_;
+    bool enable_wiggle_;
     Eigen::Vector3d t_, r_, int_force_, int_torque_, v_f_, w_f_, force_error_, torque_error_;
     ros::NodeHandle nh_;
 

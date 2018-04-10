@@ -13,6 +13,7 @@ namespace folding_algorithms{
     max_force_ = 0;
     max_torque_ = 0;
     nh_ = ros::NodeHandle("~");
+    enable_wiggle_ = false;
 
     if (!getParams())
     {
@@ -21,6 +22,11 @@ namespace folding_algorithms{
   }
 
   AdaptiveController::~AdaptiveController(){}
+
+  void AdaptiveController::useWiggle(bool val)
+  {
+    enable_wiggle_ = val;
+  }
 
   Vector6d AdaptiveController::control(const Vector6d &wrench, double v_d, double w_d, double dt, const Eigen::Vector3d &force_direction)
   {
@@ -90,7 +96,15 @@ namespace folding_algorithms{
       w_f_ = w_f_*max_torque_/w_f_.norm();
     }
 
-    ref_twist.block<3,1>(3,0) = w_d*r_ - (I - r_*r_.transpose())*w_f_ + wiggle_amplitude_*sin(2*M_PI*wiggle_frequency_*ros::Time::now().toSec())*normal;
+    if (enable_wiggle_)
+    {
+      ref_twist.block<3,1>(3,0) = w_d*r_ - (I - r_*r_.transpose())*w_f_ + wiggle_amplitude_*sin(2*M_PI*wiggle_frequency_*ros::Time::now().toSec())*normal;
+    }
+    else
+    {
+      ref_twist.block<3,1>(3,0) = w_d*r_ - (I - r_*r_.transpose())*w_f_;
+    }
+
     r_ = r_ - alpha_adapt_r_*w_d*w_f_*dt;
     r_ = r_/r_.norm();
 

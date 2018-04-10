@@ -61,15 +61,21 @@ namespace folding_assembly_controller
     }
 
     if (!nh_.getParam("base_align", base_align_))
-	{
-	  ROS_ERROR("Missing base align axis");
-	  return false;
-	}
+    {
+      ROS_ERROR("Missing base align axis");
+      return false;
+    }
 
     if (!nh_.getParam("initial_wait_time", wait_time_))
     {
       ROS_WARN("Missing initial_wait_time, using default");
       wait_time_ = 5.0;
+    }
+
+    if (!nh_.getParam("wiggle_max_time", wiggle_max_time_))
+    {
+      ROS_ERROR("Missing wiggle max time");
+      return false;
     }
 
     if (!checkAxis(rot_axis_))
@@ -275,7 +281,7 @@ namespace folding_assembly_controller
     feedback_.current_angle = theta_proj;
 
 
-    if (compute_control && !final_rotation_)
+    if (compute_control && !final_rotation_ && !final_wiggle_)
     {
       if (pose_goal_)
       {
@@ -294,7 +300,9 @@ namespace folding_assembly_controller
 
         if (fabs(theta_proj) < theta_lim_)
         {
-          action_server_->setSucceeded();
+          final_wiggle_ = true;
+          final_rotation_ = false;
+          wiggle_init_time_ = ros::Time::now();
         }
         feedback_.phase = "Velocity control";
       }
@@ -302,14 +310,32 @@ namespace folding_assembly_controller
 
     KDL::Twist relative_twist_kdl;
 
-    // TODO: Choose direction for force control
-    tf::vectorEigenToKDL(r1, r1_kdl); // use r1 as direction for force control. Need to rotate to C-frame
-    r1_kdl = p2.M.Inverse()*r1_kdl;
-    tf::vectorKDLToEigen(r1_kdl, r1_in_c_frame);
-    // tf::vectorEigenToKDL(p1_eig.translation(), r1_kdl);
-    // r1_kdl = p2.M.Inverse()*r1_kdl;
-    // tf::vectorKDLToEigen(r1_kdl, r1_in_c_frame);
-    relative_twist = adaptive_velocity_controller_.control(wrench2, vd, wd, dt.toSec(), r1_in_c_frame.normalized()); // twist expressed at the contact point, in p2 coordinates
+    if (final_wiggle_)
+    {
+      wd = 0.0;
+      if ((ros::Time::now() - wiggle_init_time_).toSec() > wiggle_max_time_)
+      {
+        action_server_->setSucceeded();
+      }
+      else
+      {
+        adaptive_velocity_controller_.useWiggle(true);
+      }
+
+      KDL::Vector normal_kdl;
+      Eigen::Vector3d n_est_in_c_frame;
+      tf::vectorEigenToKDL(n_est, normal_kdl); // use the normal as direction for force control. Need to rotate to C-frame
+      normal_kdl = p2.M.Inverse()*normal_kdl;
+      tf::vectorKDLToEigen(normal_kdl, n_est_in_c_frame);
+      relative_twist = adaptive_velocity_controller_.control(wrench2, vd, wd, dt.toSec(), n_est_in_c_frame.normalized());
+    }
+    else
+    {
+      tf::vectorEigenToKDL(r1, r1_kdl); // use r1 as direction for force control. Need to rotate to C-frame
+      r1_kdl = p2.M.Inverse()*r1_kdl;
+      tf::vectorKDLToEigen(r1_kdl, r1_in_c_frame);
+      relative_twist = adaptive_velocity_controller_.control(wrench2, vd, wd, dt.toSec(), r1_in_c_frame.normalized()); // twist expressed at the contact point, in p2 coordinates
+    }
 
     tf::twistEigenToKDL(relative_twist, relative_twist_kdl);
     relative_twist_kdl = p2.M*relative_twist_kdl;
@@ -331,7 +357,9 @@ namespace folding_assembly_controller
     {
       if (skip_final_alignment_)
       {
-        action_server_->setSucceeded();
+        final_wiggle_ = true;
+        final_rotation_ = false;
+        wiggle_init_time_ = ros::Time::now();
       }
       else
       {
@@ -357,10 +385,12 @@ namespace folding_assembly_controller
         absolute_twist.block<3,1>(0, 0) = vd*base_y;
         absolute_twist.block<3,1>(3, 0) = wd*base_x;
         qdot = ects_controller_->control(current_state, pc_est.translation() - eef1_eig.translation(), pc_est.translation() - eef2_eig.translation(), absolute_twist, Eigen::Matrix<double, 6, 1>::Zero());
-		
-		if (fabs(theta_proj) < angle_goal_threshold_)
+
+	      if (fabs(theta_proj) < angle_goal_threshold_)
         {
-          action_server_->setSucceeded();
+          final_wiggle_ = true;
+          final_rotation_ = false;
+          wiggle_init_time_ = ros::Time::now();
         }
       }
     }
@@ -374,18 +404,18 @@ namespace folding_assembly_controller
     marker_manager_.publishMarkers();
 
     action_server_->publishFeedback(feedback_);
-	
-	if (!action_server_->isActive())
-	{
-		ret = current_state;
-		  
-		for (unsigned int i = 0; i < ret.name.size(); i++)
-		{
-			ret.velocity[i] = 0.0;
-		}
-	}
-	
-	return ret;
+
+    if (!action_server_->isActive())
+    {
+	    ret = current_state;
+
+	    for (unsigned int i = 0; i < ret.name.size(); i++)
+	    {
+        ret.velocity[i] = 0.0;
+	    }
+    }
+
+    return ret;
   }
 
   bool FoldingController::setArm(const std::string &arm_name, std::string &eef_name)
@@ -506,7 +536,8 @@ namespace folding_assembly_controller
     kdl_manager_->getGrippingPoint(rod_eef_, lastState(sensor_msgs::JointState()), p1);
     tf::transformKDLToEigen(p1, p1_eig);
     kalman_filter_.initialize(p1_eig.translation() + contact_offset_*p1_eig.matrix().block<3,1>(0, 2));
-	final_rotation_ = false;
+    final_rotation_ = false;
+    final_wiggle_ = false;
     start_time_ = ros::Time::now();
 
     return true;
