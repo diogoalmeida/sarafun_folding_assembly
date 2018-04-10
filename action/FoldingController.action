@@ -12,3 +12,4 @@ folding_assembly_controller/VelocityGoal velocity_goal
 # Feedback
 string phase
 float64 current_angle
+float64 control_period

@@ -194,6 +194,8 @@ namespace folding_assembly_controller
     Eigen::Affine3d p1_eig, p2_eig, pc_est;
     bool compute_control = false;
 
+    feedback_.control_period = dt.toSec();
+
     kdl_manager_->getGrippingPoint(rod_eef_, current_state, p1);
     kdl_manager_->getGrippingPoint(surface_eef_, current_state, p2);
     tf::transformKDLToEigen(p1, p1_eig);
@@ -279,7 +281,6 @@ namespace folding_assembly_controller
     pc_proj = pc_est.translation().dot(align2_eig);
     prev_theta_proj_ = theta_proj;
     feedback_.current_angle = theta_proj;
-
 
     if (compute_control && !final_rotation_ && !final_wiggle_)
     {
