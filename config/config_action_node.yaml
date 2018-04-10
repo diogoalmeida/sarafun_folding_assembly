@@ -32,7 +32,7 @@ kf_estimator:
 
 relative_pose_controller:
   vd_max: 0.01
-  wd_max: 0.025
+  wd_max: 0.05
   position_gain: -0.3
   orientation_gain: 0.4
 
@@ -59,7 +59,7 @@ adaptive_estimator:
   alpha_torque_t: 0.3 # 0.3
   alpha_torque_n: 1.0
   beta_torque_t: 0.0
-  beta_torque_n: -0.0
+  beta_torque_n: 0.2
   alpha_adapt_r: 0
   torque_slack: 0.02
   max_force: 3

@@ -361,11 +361,6 @@ namespace folding_assembly_controller
 		if (fabs(theta_proj) < angle_goal_threshold_)
         {
           action_server_->setSucceeded();
-		  
-		  for (unsigned int i = 0; i < qdot.rows(); i++)
-		  {
-			  qdot[i] = 0.0;
-		  }
         }
       }
     }
@@ -379,7 +374,18 @@ namespace folding_assembly_controller
     marker_manager_.publishMarkers();
 
     action_server_->publishFeedback(feedback_);
-    return ret;
+	
+	if (!action_server_->isActive())
+	{
+		ret = current_state;
+		  
+		for (unsigned int i = 0; i < ret.name.size(); i++)
+		{
+			ret.velocity[i] = 0.0;
+		}
+	}
+	
+	return ret;
   }
 
   bool FoldingController::setArm(const std::string &arm_name, std::string &eef_name)
