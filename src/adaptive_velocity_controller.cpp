@@ -75,7 +75,7 @@ namespace folding_algorithms{
     }
 
     // ref_twist.block<3,1>(0,0) = v_d*t_ - (I - t_*t_.transpose())*v_f_;
-    ref_twist.block<3,1>(0,0) = v_d*t_ - v_f_;
+    ref_twist.block<3,1>(0,0) = v_d*t_ - v_f_ + wiggle_amplitude_*sin(2*M_PI*wiggle_frequency_*ros::Time::now().toSec())*normal;
     t_ = t_ - alpha_adapt_t_*v_d*(I - t_*t_.transpose())*v_f_*dt;
     t_ = t_/t_.norm();
 
@@ -189,6 +189,18 @@ namespace folding_algorithms{
     if (!nh_.getParam("adaptive_estimator/beta_torque_n", beta_torque_n_))
     {
       ROS_ERROR("Missing normal beta torque value (adaptive_estimator/beta_torque_n)");
+      return false;
+    }
+
+    if (!nh_.getParam("adaptive_estimator/wiggle_amplitude", wiggle_amplitude_))
+    {
+      ROS_ERROR("Missing wiggle amplitude value (adaptive_estimator/wiggle_amplitude)");
+      return false;
+    }
+
+    if (!nh_.getParam("adaptive_estimator/wiggle_frequency", wiggle_frequency_))
+    {
+      ROS_ERROR("Missing wiggle amplitude value (adaptive_estimator/wiggle_frequency)");
       return false;
     }
 
