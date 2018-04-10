@@ -353,15 +353,20 @@ namespace folding_assembly_controller
         ROS_DEBUG_STREAM("Theta proj: " << theta_proj);
         feedback_.phase = "Final alignment";
         feedback_.current_angle = theta_proj;
-        if (fabs(theta_proj) < angle_goal_threshold_)
-        {
-          action_server_->setSucceeded();
-        }
         absolute_pose_controller_.computeControl(pc_proj, theta_proj, 0.0, 0.0, vd, wd);
         absolute_twist.block<3,1>(0, 0) = vd*base_y;
         absolute_twist.block<3,1>(3, 0) = wd*base_x;
         qdot = ects_controller_->control(current_state, pc_est.translation() - eef1_eig.translation(), pc_est.translation() - eef2_eig.translation(), absolute_twist, Eigen::Matrix<double, 6, 1>::Zero());
-
+		
+		if (fabs(theta_proj) < angle_goal_threshold_)
+        {
+          action_server_->setSucceeded();
+		  
+		  for (unsigned int i = 0; i < qdot.rows(); i++)
+		  {
+			  qdot[i] = 0.0;
+		  }
+        }
       }
     }
     else
