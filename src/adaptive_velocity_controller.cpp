@@ -75,7 +75,7 @@ namespace folding_algorithms{
     }
 
     // ref_twist.block<3,1>(0,0) = v_d*t_ - (I - t_*t_.transpose())*v_f_;
-    ref_twist.block<3,1>(0,0) = v_d*t_ - v_f_ + wiggle_amplitude_*sin(2*M_PI*wiggle_frequency_*ros::Time::now().toSec())*normal;
+    ref_twist.block<3,1>(0,0) = v_d*t_ - v_f_;
     t_ = t_ - alpha_adapt_t_*v_d*(I - t_*t_.transpose())*v_f_*dt;
     t_ = t_/t_.norm();
 
@@ -90,7 +90,7 @@ namespace folding_algorithms{
       w_f_ = w_f_*max_torque_/w_f_.norm();
     }
 
-    ref_twist.block<3,1>(3,0) = w_d*r_ - (I - r_*r_.transpose())*w_f_;
+    ref_twist.block<3,1>(3,0) = w_d*r_ - (I - r_*r_.transpose())*w_f_ + wiggle_amplitude_*sin(2*M_PI*wiggle_frequency_*ros::Time::now().toSec())*normal;
     r_ = r_ - alpha_adapt_r_*w_d*w_f_*dt;
     r_ = r_/r_.norm();
 

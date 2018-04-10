@@ -60,8 +60,8 @@ adaptive_estimator:
   alpha_torque_n: 1.0
   beta_torque_t: 0.0
   beta_torque_n: 0.2
-  wiggle_amplitude: 0.01
-  wiggle_frequency: 2
+  wiggle_amplitude: 0.025
+  wiggle_frequency: 0.2
   alpha_adapt_r: 0
   torque_slack: 0.02
   max_force: 3
