@@ -56,8 +56,10 @@ adaptive_estimator:
   beta_force: 0.00
   force_slack: 0.0
   alpha_adapt_t: 1
-  alpha_torque: 0.3 # 0.3
-  beta_torque: 0.0
+  alpha_torque_t: 0.3 # 0.3
+  alpha_torque_n: 0.3
+  beta_torque_t: 0.0
+  beta_torque_n: 0.0
   alpha_adapt_r: 1
   torque_slack: 1.1
   max_force: 5

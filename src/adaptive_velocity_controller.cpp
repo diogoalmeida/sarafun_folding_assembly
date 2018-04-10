@@ -80,7 +80,9 @@ namespace folding_algorithms{
     t_ = t_/t_.norm();
 
     int_torque_ = computeIntegralTerm(int_torque_, r_, torque_error_, dt);
-    w_f_ = alpha_torque_*(I - r_*r_.transpose())*torque_error_ + beta_torque_*int_torque_;
+    // apply different torque gains along different directions
+    w_f_ = (alpha_torque_t_*(t_*t_.transpose())+ alpha_torque_n_*(normal*normal.transpose()))*torque_error_
+         + (beta_torque_t_*(t_*t_.transpose()) + beta_torque_n_*(normal*normal.transpose()))*int_torque_;
 
     if (w_f_.norm() > max_torque_)
     {
@@ -166,15 +168,27 @@ namespace folding_algorithms{
       return false;
     }
 
-    if (!nh_.getParam("adaptive_estimator/alpha_torque", alpha_torque_))
+    if (!nh_.getParam("adaptive_estimator/alpha_torque_t", alpha_torque_t_))
     {
-      ROS_ERROR("Missing torque gain (adaptive_estimator/alpha_torque)");
+      ROS_ERROR("Missing translation dir torque gain (adaptive_estimator/alpha_torque_t)");
       return false;
     }
 
-    if (!nh_.getParam("adaptive_estimator/beta_torque", beta_torque_))
+    if (!nh_.getParam("adaptive_estimator/alpha_torque_n", alpha_torque_n_))
     {
-      ROS_ERROR("Missing beta torque value (adaptive_estimator/beta_torque)");
+      ROS_ERROR("Missing normal dir torque gain (adaptive_estimator/alpha_torque_n)");
+      return false;
+    }
+
+    if (!nh_.getParam("adaptive_estimator/beta_torque_t", beta_torque_t_))
+    {
+      ROS_ERROR("Missing translational beta torque value (adaptive_estimator/beta_torque_t)");
+      return false;
+    }
+
+    if (!nh_.getParam("adaptive_estimator/beta_torque_n", beta_torque_n_))
+    {
+      ROS_ERROR("Missing normal beta torque value (adaptive_estimator/beta_torque_n)");
       return false;
     }
 
