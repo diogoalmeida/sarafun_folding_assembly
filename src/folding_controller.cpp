@@ -66,6 +66,18 @@ namespace folding_assembly_controller
       return false;
     }
 
+    if (!nh_.getParam("degree_n", degree_n_))
+    {
+      ROS_ERROR("Missing degree_n");
+      return false;
+    }
+
+    if (!nh_.getParam("degree_r", degree_r_))
+    {
+      ROS_ERROR("Missing degree_r");
+      return false;
+    }
+
     if (!nh_.getParam("initial_wait_time", wait_time_))
     {
       ROS_WARN("Missing initial_wait_time, using default");
@@ -235,14 +247,14 @@ namespace folding_assembly_controller
       ROS_INFO_ONCE("Entering final folding phase");
       pc_est.translation() = kalman_filter_.estimate(p1_eig.translation(), v1_eig, p2_eig.translation(), Eigen::Matrix<double, 6, 1>::Zero(), dt.toSec());
     }
-    
+
     if (!compute_control)
 	{
 		for (unsigned int i = 0; i < ret.name.size(); i++)
 		{
 			ret.velocity[i] = 0.0;
 		}
-		
+
 		return ret;
 	}
 
@@ -339,7 +351,7 @@ namespace folding_assembly_controller
       tf::vectorEigenToKDL(n_est, normal_kdl); // use the normal as direction for force control. Need to rotate to C-frame
       normal_kdl = p2.M.Inverse()*normal_kdl;
       tf::vectorKDLToEigen(normal_kdl, n_est_in_c_frame);
-      relative_twist = adaptive_velocity_controller_.control(wrench2, vd, wd, dt.toSec(), (r1_in_c_frame + n_est_in_c_frame).normalized());
+      relative_twist = adaptive_velocity_controller_.control(wrench2, vd, wd, dt.toSec(), (degree_r_*r1_in_c_frame + degree_n_*n_est_in_c_frame).normalized());
     }
     else
     {

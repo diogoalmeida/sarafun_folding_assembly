@@ -70,7 +70,6 @@ namespace folding_algorithms{
       torque_error_ = torque_error_ - torque_slack_*torque_error_.normalized();
     }
 
-    int_force_ = computeIntegralTerm(int_force_, t_, force_error_, dt);
     v_f_ = alpha_force_*force_error_ + beta_force_*int_force_;
 
     // TODO: Avoid windup
@@ -79,13 +78,16 @@ namespace folding_algorithms{
       ROS_WARN("Saturated v_f");
       v_f_ = v_f_*max_force_/v_f_.norm();
     }
+    else
+    {
+      int_force_ = computeIntegralTerm(int_force_, t_, force_error_, dt);
+    }
 
     // ref_twist.block<3,1>(0,0) = v_d*t_ - (I - t_*t_.transpose())*v_f_;
     ref_twist.block<3,1>(0,0) = v_d*t_ - v_f_;
     t_ = t_ - alpha_adapt_t_*v_d*(I - t_*t_.transpose())*v_f_*dt;
     t_ = t_/t_.norm();
 
-    int_torque_ = computeIntegralTerm(int_torque_, r_, torque_error_, dt);
     // apply different torque gains along different directions
     w_f_ = (alpha_torque_t_*(t_*t_.transpose())+ alpha_torque_n_*(normal*normal.transpose()))*torque_error_
          + (beta_torque_t_*(t_*t_.transpose()) + beta_torque_n_*(normal*normal.transpose()))*int_torque_;
@@ -94,6 +96,10 @@ namespace folding_algorithms{
     {
       ROS_WARN("Saturated w_f");
       w_f_ = w_f_*max_torque_/w_f_.norm();
+    }
+    else
+    {
+      int_torque_ = computeIntegralTerm(int_torque_, r_, torque_error_, dt);
     }
 
     if (enable_wiggle_)

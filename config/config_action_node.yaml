@@ -4,6 +4,8 @@ action_name: folding_controller
 initial_wait_time: 2
 base_align: -y
 wiggle_max_time: 15
+degree_n: 0.1
+degree_r: 1.0
 
 kdl_manager:
   eps: 0.001
@@ -33,7 +35,7 @@ kf_estimator:
 
 relative_pose_controller:
   vd_max: 0.01
-  wd_max: 0.075
+  wd_max: 0.04
   position_gain: -0.3
   orientation_gain: 0.5 # 0.4
 
@@ -66,4 +68,4 @@ adaptive_estimator:
   alpha_adapt_r: 0
   torque_slack: 0.0
   max_force: 3
-  max_torque: 0.3
+  max_torque: 0.04
