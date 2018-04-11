@@ -195,6 +195,7 @@ namespace folding_assembly_controller
     bool compute_control = false;
 
     feedback_.control_period = dt.toSec();
+    ROS_DEBUG_THROTTLE(10, "Folding controller running");
 
     kdl_manager_->getGrippingPoint(rod_eef_, current_state, p1);
     kdl_manager_->getGrippingPoint(surface_eef_, current_state, p2);
