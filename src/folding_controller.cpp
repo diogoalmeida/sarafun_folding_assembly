@@ -226,7 +226,7 @@ namespace folding_assembly_controller
     }
 
     pc_est.linear() = p1_eig.linear();
-    if (!final_rotation_) // For small angles we antecipate that the single contact point assumption is violated
+    if (!final_rotation_ && !compute_control) // For small angles we antecipate that the single contact point assumption is violated
     {
       pc_est.translation() = kalman_filter_.estimate(p1_eig.translation(), v1_eig, p2_eig.translation(), wrench2_rotated, dt.toSec()); // The kalman filter estimates in the base frame, thus the wrench should be writen in that basis.
     }
@@ -235,6 +235,16 @@ namespace folding_assembly_controller
       ROS_INFO_ONCE("Entering final folding phase");
       pc_est.translation() = kalman_filter_.estimate(p1_eig.translation(), v1_eig, p2_eig.translation(), Eigen::Matrix<double, 6, 1>::Zero(), dt.toSec());
     }
+    
+    if (!compute_control)
+	{
+		for (unsigned int i = 0; i < ret.name.size(); i++)
+		{
+			ret.velocity[i] = 0.0;
+		}
+		
+		return ret;
+	}
 
     marker_manager_.setMarkerPose("estimates", "contact_point_estimate", pc_est);
     marker_manager_.setMarkerPose("estimates", "computed_p1", p1_eig);
@@ -283,7 +293,7 @@ namespace folding_assembly_controller
     prev_theta_proj_ = theta_proj;
     feedback_.current_angle = theta_proj;
 
-    if (compute_control && !final_rotation_ && !final_wiggle_)
+    if (!final_rotation_ && !final_wiggle_)
     {
       if (pose_goal_)
       {
@@ -329,7 +339,7 @@ namespace folding_assembly_controller
       tf::vectorEigenToKDL(n_est, normal_kdl); // use the normal as direction for force control. Need to rotate to C-frame
       normal_kdl = p2.M.Inverse()*normal_kdl;
       tf::vectorKDLToEigen(normal_kdl, n_est_in_c_frame);
-      relative_twist = adaptive_velocity_controller_.control(wrench2, vd, wd, dt.toSec(), n_est_in_c_frame.normalized());
+      relative_twist = adaptive_velocity_controller_.control(wrench2, vd, wd, dt.toSec(), (r1_in_c_frame + n_est_in_c_frame).normalized());
     }
     else
     {
@@ -541,6 +551,7 @@ namespace folding_assembly_controller
     final_rotation_ = false;
     final_wiggle_ = false;
     start_time_ = ros::Time::now();
+	ects_controller_->setAlpha(0.5);
 
     return true;
   }
